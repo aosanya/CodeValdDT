@@ -254,6 +254,16 @@ func toGRPCError(err error) error {
 
 ---
 
+## File Size and Complexity Limits
+
+- **Max file size**: 500 lines (hard limit)
+- **Max function length**: 50 lines (prefer 20-30)
+- **One primary concern per file**
+- **Max documentation file size**: 300 lines (hard limit) — split into focused
+  files and update the index in `architecture.md` when the limit is reached
+
+---
+
 ## Anti-Patterns
 
 - ❌ **AI/LLM calls** — not in this service
@@ -266,3 +276,4 @@ func toGRPCError(err error) error {
 - ❌ **Relationships in a document collection** — use the edge collection
 - ❌ **Skipping pub/sub events** — always publish on entity creation and
   telemetry recording
+- ❌ **Documentation files over 300 lines** — split and add to the architecture index
