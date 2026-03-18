@@ -95,7 +95,7 @@ and events.
 |---|---|
 | Language | Go 1.21+ |
 | API | gRPC + protobuf |
-| Storage | ArangoDB — one database per agency |
+| Storage | ArangoDB — single shared database (`DT_ARANGO_DATABASE` env var); collections scoped by `agencyID` field |
 | Schema standard | DTDL v3 compatible |
 | Context propagation | All exported methods take `context.Context` as first arg |
 | Godoc | All exported symbols must have godoc comments |
@@ -113,8 +113,8 @@ and events.
 |---|---|
 | Schema enforcement at entity creation | Deferred — v1 trusts the caller |
 | Live telemetry streaming (gRPC server-stream) | Deferred |
-| Entity deletion cascade to relationships/telemetry/events | TBD |
-| Soft delete vs. hard delete for entities | TBD |
+| Entity deletion cascade to relationships/telemetry/events | **Resolved — no cascade in v1.** `DeleteEntity` soft-deletes only the entity; its relationships, telemetry, and events are retained as-is. Orphan cleanup deferred to v2. |
+| Soft delete vs. hard delete for entities | **Resolved — soft delete.** `DeleteEntity` sets `deleted: true` and `deletedAt` on the document. Hard delete is not exposed in v1. |
 
 ### Out of Scope
 - Remote Git hosting (no GitHub/GitLab push/pull — local repos only, for now)

@@ -4,40 +4,55 @@
 
 ## 7. ArangoDB Schema
 
-### Per-Agency Database
+### Shared Database
 
-Each agency gets its own ArangoDB database. The database name is derived from
-the agency ID: `dt_{agencyID}`.
+The ArangoDB database is **pre-existing** — CodeValdDT connects to it on
+startup using `arangoutil.Connect` from SharedLib. It does **not** create the
+database. The database name is supplied via the `DT_ARANGO_DATABASE`
+environment variable (e.g. `codevald_demo`).
+
+CodeValdDT is responsible for ensuring its collections and indexes exist on
+startup (create-if-not-present on every boot — idempotent). It is **not**
+responsible for database lifecycle.
+
+All collection documents carry an `agencyID` field that scopes all reads and writes.
 
 | Collection | Collection Type | Contents |
 |---|---|---|
 | `dt_schemas` | document | Versioned, immutable schema definitions (`TypeDefinition` list) |
-| `entities` | document | Entity instances (typed objects) |
-| `relationships` | **edge** | Graph edges between entities — `_from` + `_to` ref `entities/{id}` |
-| `telemetry` | document | Time-series telemetry readings |
-| `events` | document | Event log entries |
+| `dt_entities` | document | Entity instances; soft-deleted via `deleted` + `deletedAt` fields |
+| `dt_relationships` | **edge** | Graph edges between entities — `_from` + `_to` ref `dt_entities/{id}` |
+| `dt_telemetry` | document | Time-series telemetry readings |
+| `dt_events` | document | Event log entries |
 
-> ⚠️ `relationships` **MUST** be created as an edge collection
+> ⚠️ `dt_relationships` **MUST** be created as an edge collection
 > (`CollectionTypeEdge`). Creating it as a document collection prevents AQL
 > graph traversal and breaks `TraverseGraph`. This is a one-time constraint —
 > collection type cannot be changed after creation.
 
 ### Named Graph
 
-A named graph `dt_graph` is created in each agency database:
+A single named graph `dt_graph` is created in the shared database.
+Because all agencies share the same vertex and edge collections, every
+traversal query filters by `agencyID` and excludes soft-deleted vertices:
 
 ```
 Graph: dt_graph
 Edge collection:   relationships
-Vertex collection: entities
+Vertex collection: dt_entities
 ```
 
-The named graph enables AQL traversal:
-`FOR v, e, p IN 1..@depth @direction @startVertex GRAPH 'dt_graph'`
+AQL traversal template (returns vertex + edge for each hop):
+
+```
+FOR v, e, p IN 1..@depth @direction @startVertex GRAPH 'dt_graph'
+  FILTER v.agencyID == @agencyID AND v.deleted != true
+  RETURN { vertex: v, edge: e }
+```
 
 ### Document Shapes
 
-**`entities/{id}`**
+**`dt_entities/{id}`**
 ```json
 {
   "_key":       "entity-uuid",
@@ -45,16 +60,18 @@ The named graph enables AQL traversal:
   "typeID":     "Pump",
   "properties": { "pressure": 4.2, "status": "running" },
   "createdAt":  "2026-01-01T00:00:00Z",
-  "updatedAt":  "2026-01-01T00:00:00Z"
+  "updatedAt":  "2026-01-01T00:00:00Z",
+  "deleted":    false,
+  "deletedAt":  null
 }
 ```
 
-**`relationships/{id}`** (edge document)
+**`dt_relationships/{id}`** (edge document)
 ```json
 {
   "_key":       "rel-uuid",
-  "_from":      "entities/entity-uuid-1",
-  "_to":        "entities/entity-uuid-2",
+  "_from":      "dt_entities/entity-uuid-1",
+  "_to":        "dt_entities/entity-uuid-2",
   "agencyID":   "agency-123",
   "name":       "connects_to",
   "properties": {},
@@ -62,7 +79,7 @@ The named graph enables AQL traversal:
 }
 ```
 
-**`telemetry/{id}`**
+**`dt_telemetry/{id}`**
 ```json
 {
   "_key":      "tel-uuid",
@@ -74,7 +91,7 @@ The named graph enables AQL traversal:
 }
 ```
 
-**`events/{id}`**
+**`dt_events/{id}`**
 ```json
 {
   "_key":      "evt-uuid",
@@ -92,8 +109,9 @@ The named graph enables AQL traversal:
 |---|---|---|---|
 | `dt_schemas` | `agencyID` | persistent | All schema versions for an agency |
 | `dt_schemas` | `agencyID, version` | unique persistent | One document per agency per version |
-| `entities` | `agencyID` | persistent | All entity queries scope by agency |
-| `entities` | `typeID` | persistent | ListEntities by type |
-| `relationships` | `agencyID` | persistent | Scope edge queries |
-| `telemetry` | `entityID, timestamp` | persistent | Time-range queries per entity |
-| `events` | `entityID, timestamp` | persistent | Chronological event log per entity |
+| `dt_entities` | `agencyID` | persistent | All entity queries scope by agency |
+| `dt_entities` | `typeID` | persistent | ListEntities by type |
+| `dt_entities` | `agencyID, deleted` | persistent | Efficiently exclude soft-deleted entities from list/traversal |
+| `dt_relationships` | `agencyID` | persistent | Scope edge queries |
+| `dt_telemetry` | `entityID, timestamp` | persistent | Time-range queries per entity |
+| `dt_events` | `entityID, timestamp` | persistent | Chronological event log per entity |

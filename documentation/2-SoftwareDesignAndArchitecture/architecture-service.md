@@ -9,21 +9,21 @@ CodeValdDT/
 ├── cmd/
 │   └── main.go                   # Wires dependencies only — no business logic
 ├── go.mod
-├── errors.go                     # ErrEntityNotFound, ErrRelationshipNotFound, etc.
-├── models.go                     # Entity, Relationship, TelemetryReading, Event, filter/request types
-├── codevalddt.go                 # DTManager + Backend interfaces
+├── errors.go                     # ErrEntityNotFound, ErrRelationshipNotFound, ErrImmutableType, etc.
+├── models.go                     # DTDataManager = entitygraph.DataManager alias; DTSchemaManager alias
+├── codevalddt.go                 # Package-level godoc; imports entitygraph aliases
 ├── internal/
 │   ├── config/
 │   │   └── config.go             # Config struct + loader (env / YAML)
 │   ├── manager/
-│   │   └── manager.go            # Concrete DTManager — holds Backend + CrossClient
+│   │   └── manager.go            # Concrete DTDataManager — holds DTSchemaManager + CrossClient
 │   ├── server/
 │   │   └── server.go             # Inbound gRPC server — DTService handlers
 │   └── registrar/
 │       └── registrar.go          # Cross registration heartbeat loop
 ├── storage/
 │   └── arangodb/
-│       └── storage.go            # ArangoDB Backend implementation
+│       └── storage.go            # ArangoDB DTSchemaManager implementation
 ├── proto/
 │   └── codevalddt/
 │       └── dt.proto              # DTService gRPC definition
@@ -51,21 +51,13 @@ service DTService {
 
     // Graph operations
     rpc CreateRelationship   (CreateRelationshipRequest)   returns (Relationship);
+    rpc GetRelationship      (GetRelationshipRequest)      returns (Relationship);
     rpc DeleteRelationship   (DeleteRelationshipRequest)   returns (google.protobuf.Empty);
+    rpc ListRelationships    (ListRelationshipsRequest)    returns (ListRelationshipsResponse);
+    // TraverseGraphResponse contains both vertices (repeated Entity) and
+    // edges (repeated Relationship) — matches TraverseGraphResult in models.go.
     rpc TraverseGraph        (TraverseGraphRequest)        returns (TraverseGraphResponse);
-
-    // Telemetry
-    rpc RecordTelemetry      (RecordTelemetryRequest)      returns (TelemetryReading);
-    rpc QueryTelemetry       (QueryTelemetryRequest)       returns (QueryTelemetryResponse);
-
-    // Events
-    rpc RecordEvent          (RecordEventRequest)          returns (Event);
-    rpc ListEvents           (ListEventsRequest)           returns (ListEventsResponse);
-
-    // Schema management
-    rpc PublishSchema        (PublishSchemaRequest)        returns (DTSchema);
-    rpc GetSchema            (GetSchemaRequest)            returns (DTSchema);
-    rpc ListSchemaVersions   (ListSchemaVersionsRequest)   returns (ListSchemaVersionsResponse);
+}
 }
 ```
 
@@ -84,7 +76,6 @@ RegisterRequest{
     Addr:        ":50055",
     Produces: []string{
         "cross.dt.{agencyID}.entity.created",
-        "cross.dt.{agencyID}.telemetry.recorded",
     },
     Consumes: []string{},
     Routes: []Route{
@@ -94,15 +85,10 @@ RegisterRequest{
         {Method: "DELETE", Pattern: "/{agencyId}/dt/entities/{entityId}"},
         {Method: "GET",    Pattern: "/{agencyId}/dt/entities"},
         {Method: "POST",   Pattern: "/{agencyId}/dt/relationships"},
+        {Method: "GET",    Pattern: "/{agencyId}/dt/relationships/{relationshipId}"},
         {Method: "DELETE", Pattern: "/{agencyId}/dt/relationships/{relationshipId}"},
+        {Method: "GET",    Pattern: "/{agencyId}/dt/relationships"},
         {Method: "POST",   Pattern: "/{agencyId}/dt/entities/{entityId}/traverse"},
-        {Method: "POST",   Pattern: "/{agencyId}/dt/entities/{entityId}/telemetry"},
-        {Method: "GET",    Pattern: "/{agencyId}/dt/entities/{entityId}/telemetry"},
-        {Method: "POST",   Pattern: "/{agencyId}/dt/entities/{entityId}/events"},
-        {Method: "GET",    Pattern: "/{agencyId}/dt/entities/{entityId}/events"},
-        {Method: "POST",   Pattern: "/{agencyId}/dt/schema"},
-        {Method: "GET",    Pattern: "/{agencyId}/dt/schema"},
-        {Method: "GET",    Pattern: "/{agencyId}/dt/schema/versions"},
     },
 }
 ```

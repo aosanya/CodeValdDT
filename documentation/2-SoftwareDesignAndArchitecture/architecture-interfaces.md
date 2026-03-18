@@ -6,27 +6,48 @@
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Business-logic entry point | `DTManager` interface | gRPC handlers delegate to it; no logic in handlers |
+| Business-logic entry point | `DTDataManager = entitygraph.DataManager` (SharedLib) | gRPC handlers delegate to it; owns entity lifecycle and graph operations; shared with CodeValdComm |
 | Downstream communication | gRPC only — no direct Go imports | Stable versioned contracts; independent deployment |
-| Storage injection | `Backend` interface injected by `cmd/main.go` | Backend-agnostic core; easy to mock for tests |
-| Graph storage | ArangoDB edge collection (`relationships`) | Native AQL graph traversal; no separate graph engine needed |
-| Database isolation | One ArangoDB database per agency | Consistent with CodeVald platform convention |
-| Schema definition | `DTSchema` per agency stored in `dt_schemas`; published via DT gRPC API by the Agency Owner | Versioned and immutable — each publish creates a new version |
-| Schema enforcement | None in v1 | Keeps DT lean; enforcement can be added in v2 without API break |
+| Storage injection | `DTSchemaManager = entitygraph.SchemaManager` injected by `cmd/main.go` | Owns schema reads and writes (`SetSchema`, `GetSchema`, `ListSchemaVersions`) on `dt_schemas`; backend-agnostic |
+| Graph storage | ArangoDB edge collection (`dt_relationships`) | Native AQL graph traversal; no separate graph engine needed |
+| Database isolation | Single shared ArangoDB database (`DT_ARANGO_DATABASE` env var) | All collections scoped by `agencyID` field; consistent with CodeVald env-var convention |
+| Soft delete | `DeleteEntity` sets `deleted: true` and `deletedAt` — no cascade | Preserves telemetry and event history; relationships retained as orphans; hard delete deferred to v2 |
+| Traversal result | `TraverseGraph` returns both vertices and edges as `TraverseGraphResult` | Callers need edge properties (name, metadata) to render the graph without a second round-trip |
+| Relationship reads | `GetRelationship` + `ListRelationships` on `DTDataManager` | Required for UI entity-connection views |
+| Cross publisher | `DTDataManager` uses SharedLib `gen/go/codevaldcross/v1` stubs to call `Publish` — no extra wrapper | Use SharedLib infrastructure; no new abstraction needed for v1 |
+| Schema | `DTSchemaManager` owns `SetSchema`, `GetSchema`, and `ListSchemaVersions` on `dt_schemas`; `DTDataManager` has no schema methods | Schema storage is a `DTSchemaManager` concern; business-logic layer stays clean |
+| Schema enforcement | `TypeDefinition.Immutable` — `UpdateEntity` returns `ErrImmutableType` when the resolved type has `Immutable: true`; storage routing via `TypeDefinition.StorageCollection` | Immutability and storage are schema-driven; no hard-coded type checks in the manager |
 | Pub/sub events | CodeValdCross topic-based pub/sub | Platform standard; agencyID-scoped topics |
-| Telemetry model | Push + pub/sub | Caller pushes a reading via gRPC; DT stores it and publishes an event |
 | Error types | `errors.go` at module root | All exported errors in one place |
 | Value types | `models.go` at module root | Pure data structs, no methods |
 
 ---
 
-## 2. DTManager Interface
+## 2. DTDataManager & DTSchemaManager Interfaces
+
+Both interfaces are defined in **`CodeValdSharedLib/entitygraph`** and aliased
+locally. CodeValdComm uses the same interfaces for its own entity-graph store.
 
 ```go
-// DTManager is the sole business-logic entry point for all digital-twin operations.
+import "github.com/aosanya/CodeValdSharedLib/entitygraph"
+
+// DTDataManager is the CodeValdDT alias for entitygraph.DataManager.
 // gRPC handlers hold this interface — never the concrete type.
-// One instance per process; keyed internally by agencyID on every call.
-type DTManager interface {
+// Telemetry and events are schema-defined entity types routed to their
+// respective collections via TypeDefinition.StorageCollection.
+type DTDataManager = entitygraph.DataManager
+
+// DTSchemaManager is the CodeValdDT alias for entitygraph.SchemaManager.
+// cmd/main.go constructs the concrete implementation (e.g. arangodb.NewDTSchemaManager)
+// and injects it into the concrete DTDataManager.
+type DTSchemaManager = entitygraph.SchemaManager
+```
+
+Full interface and model definitions live in SharedLib:
+
+```go
+// entitygraph.DataManager (defined in CodeValdSharedLib/entitygraph/entitygraph.go)
+type DataManager interface {
     // Entity operations
     CreateEntity(ctx context.Context, req CreateEntityRequest) (Entity, error)
     GetEntity(ctx context.Context, agencyID, entityID string) (Entity, error)
@@ -36,61 +57,27 @@ type DTManager interface {
 
     // Graph operations
     CreateRelationship(ctx context.Context, req CreateRelationshipRequest) (Relationship, error)
+    GetRelationship(ctx context.Context, agencyID, relationshipID string) (Relationship, error)
     DeleteRelationship(ctx context.Context, agencyID, relationshipID string) error
-    TraverseGraph(ctx context.Context, req TraverseGraphRequest) ([]Entity, error)
-
-    // Telemetry operations
-    RecordTelemetry(ctx context.Context, req RecordTelemetryRequest) (TelemetryReading, error)
-    QueryTelemetry(ctx context.Context, filter TelemetryFilter) ([]TelemetryReading, error)
-
-    // Event operations
-    RecordEvent(ctx context.Context, req RecordEventRequest) (Event, error)
-    ListEvents(ctx context.Context, filter EventFilter) ([]Event, error)
-
-    // Schema management
-    PublishSchema(ctx context.Context, agencyID string, types []types.TypeDefinition) (types.Schema, error)
-    GetSchema(ctx context.Context, agencyID string, version int) (types.Schema, error)
-    ListSchemaVersions(ctx context.Context, agencyID string) ([]types.Schema, error)
+    ListRelationships(ctx context.Context, filter RelationshipFilter) ([]Relationship, error)
+    TraverseGraph(ctx context.Context, req TraverseGraphRequest) (TraverseGraphResult, error)
 }
-```
 
-```go
-// Backend is the storage contract injected into DTManager.
-// cmd/main.go constructs the chosen implementation (e.g. arangodb.NewBackend).
-// Each method receives agencyID so the implementation can route to the correct
-// per-agency ArangoDB database.
-type Backend interface {
-    // Entity operations
-    InsertEntity(ctx context.Context, req CreateEntityRequest) (Entity, error)
-    GetEntity(ctx context.Context, agencyID, entityID string) (Entity, error)
-    UpdateEntity(ctx context.Context, agencyID, entityID string, req UpdateEntityRequest) (Entity, error)
-    DeleteEntity(ctx context.Context, agencyID, entityID string) error
-    ListEntities(ctx context.Context, filter EntityFilter) ([]Entity, error)
-
-    // Graph operations — relationships MUST be stored in an edge collection
-    InsertRelationship(ctx context.Context, req CreateRelationshipRequest) (Relationship, error)
-    DeleteRelationship(ctx context.Context, agencyID, relationshipID string) error
-    TraverseGraph(ctx context.Context, req TraverseGraphRequest) ([]Entity, error)
-
-    // Telemetry operations
-    InsertTelemetry(ctx context.Context, req RecordTelemetryRequest) (TelemetryReading, error)
-    QueryTelemetry(ctx context.Context, filter TelemetryFilter) ([]TelemetryReading, error)
-
-    // Event operations
-    InsertEvent(ctx context.Context, req RecordEventRequest) (Event, error)
-    ListEvents(ctx context.Context, filter EventFilter) ([]Event, error)
-
-    // Schema operations
-    InsertSchema(ctx context.Context, schema types.Schema) (types.Schema, error)
+// entitygraph.SchemaManager (defined in CodeValdSharedLib/entitygraph/entitygraph.go)
+type SchemaManager interface {
+    SetSchema(ctx context.Context, schema types.Schema) error
     GetSchema(ctx context.Context, agencyID string, version int) (types.Schema, error)
     ListSchemaVersions(ctx context.Context, agencyID string) ([]types.Schema, error)
-    NextSchemaVersion(ctx context.Context, agencyID string) (int, error)
 }
 ```
 
 ---
 
 ## 3. Data Models
+
+`Entity`, `Relationship`, and all associated request/filter/result types are
+defined in `CodeValdSharedLib/entitygraph/entitygraph.go` and imported directly.
+The models below are reproduced here for reference only.
 
 ### DTSchema
 
@@ -101,8 +88,30 @@ is defined in `CodeValdSharedLib/types/schema.go` and shared with `CodeValdComm`
 ```go
 // DTSchema is the CodeValdDT alias for types.Schema.
 // Stored in the dt_schemas collection — one immutable document per agency per version.
-// Agency Owners call PublishSchema to create a new version.
+// Written via DTSchemaManager.SetSchema; read via GetSchema and ListSchemaVersions.
+// DTDataManager has no schema methods.
 type DTSchema = types.Schema
+```
+
+`TypeDefinition` carries two DT-relevant fields beyond the base property list:
+
+```go
+// TypeDefinition (excerpt — full definition in CodeValdSharedLib/types/schema.go)
+type TypeDefinition struct {
+    Name              string
+    DisplayName       string
+    Properties        []PropertyDefinition
+
+    // StorageCollection is the backing ArangoDB collection for instances of this
+    // type. Empty means the service default ("dt_entities").
+    // Set to "dt_telemetry" or "dt_events" to route writes to a specialised collection.
+    StorageCollection string
+
+    // Immutable indicates that instances of this type cannot be updated after
+    // creation. UpdateEntity returns ErrImmutableType for immutable types.
+    // Only CreateEntity and DeleteEntity are valid.
+    Immutable bool
+}
 ```
 
 ---
@@ -113,6 +122,8 @@ type DTSchema = types.Schema
 // Entity is an instance of a typed real-world object in a Digital Twin.
 // TypeID matches TypeDefinition.Name in the agency's current DTSchema.
 // Properties hold the current state values; no schema validation in v1.
+// Deleted and DeletedAt are set by DeleteEntity (soft delete) — the entity
+// is never hard-deleted in v1.
 type Entity struct {
     ID         string
     AgencyID   string
@@ -120,6 +131,8 @@ type Entity struct {
     Properties map[string]any    // current state values
     CreatedAt  time.Time
     UpdatedAt  time.Time
+    Deleted    bool              // true once DeleteEntity has been called
+    DeletedAt  *time.Time        // nil until deleted
 }
 
 // CreateEntityRequest is the input for creating a new entity.
@@ -169,61 +182,21 @@ type TraverseGraphRequest struct {
     Depth     int    // max traversal depth; 0 means 1
 }
 
-// TelemetryReading is a single time-stamped sensor or metric value for an entity.
-type TelemetryReading struct {
-    ID        string
-    AgencyID  string
-    EntityID  string
-    Name      string            // metric name (e.g. "temperature", "pressure")
-    Value     any               // numeric, bool, or string value
-    Timestamp time.Time
+// TraverseGraphResult is returned by TraverseGraph.
+// Both visited vertices and traversed edges are included so callers can
+// inspect relationship names and properties without a second round-trip.
+// Soft-deleted entities are excluded from Vertices.
+type TraverseGraphResult struct {
+    Vertices []Entity       // reachable entities (excludes soft-deleted)
+    Edges    []Relationship // traversed edges in order of discovery
 }
 
-// RecordTelemetryRequest is the input for recording a telemetry value.
-type RecordTelemetryRequest struct {
-    AgencyID  string
-    EntityID  string
-    Name      string
-    Value     any
-    Timestamp time.Time         // caller provides; allows backfill
-}
-
-// TelemetryFilter scopes a historical telemetry query.
-type TelemetryFilter struct {
-    AgencyID  string
-    EntityID  string
-    Name      string            // empty = all metrics for entity
-    Since     time.Time
-    Until     time.Time
-    Limit     int               // 0 = no limit
-}
-
-// Event is an occurrence that changed the state of an entity (discrete, not time-series).
-type Event struct {
-    ID        string
-    AgencyID  string
-    EntityID  string
-    Name      string            // event type label (e.g. "pressure_exceeded", "valve_opened")
-    Payload   map[string]any
-    Timestamp time.Time
-}
-
-// RecordEventRequest is the input for appending a new event to an entity's log.
-type RecordEventRequest struct {
-    AgencyID  string
-    EntityID  string
-    Name      string
-    Payload   map[string]any
-    Timestamp time.Time
-}
-
-// EventFilter scopes an event log read.
-type EventFilter struct {
+// RelationshipFilter scopes a ListRelationships query.
+// Zero-value fields are ignored (no filter applied for that field).
+type RelationshipFilter struct {
     AgencyID string
-    EntityID string
-    Name     string    // empty = all event types
-    Since    time.Time
-    Until    time.Time
-    Limit    int
+    FromID   string // filter by source entity ID; empty = any source
+    ToID     string // filter by target entity ID; empty = any target
+    Name     string // filter by relationship type label; empty = all types
 }
 ```
