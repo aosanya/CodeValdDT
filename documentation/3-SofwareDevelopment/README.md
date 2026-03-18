@@ -2,7 +2,8 @@
 
 ## Overview
 
-This section tracks the development plan, MVP task breakdown, and implementation details for CodeValdGit.
+This section tracks the development plan, MVP task breakdown, and implementation
+details for CodeValdDT.
 
 ---
 
@@ -10,8 +11,8 @@ This section tracks the development plan, MVP task breakdown, and implementation
 
 | Document | Description |
 |---|---|
-| [mvp.md](mvp.md) | Full MVP scope, task list, and completion status |
-| [mvp-details/](mvp-details/README.md) | Per-topic task specifications grouped by domain |
+| [mvp.md](mvp.md) | Active MVP scope, task list, and completion status |
+| [mvp_done.md](mvp_done.md) | Completed tasks with completion dates and branches |
 
 ---
 
@@ -19,41 +20,30 @@ This section tracks the development plan, MVP task breakdown, and implementation
 
 | Task ID | Title | Status |
 |---|---|---|
-| MVP-GIT-001 | Library Scaffolding | 🔲 Not Started |
-| MVP-GIT-002 | Filesystem Repo Lifecycle | 🔲 Not Started |
-| MVP-GIT-003 | Branch-Per-Task Workflow | 🔲 Not Started |
-| MVP-GIT-004 | File Operations & Commit Attribution | 🔲 Not Started |
-| MVP-GIT-005 | Fast-Forward Merge | 🔲 Not Started |
-| MVP-GIT-006 | Auto-Rebase & Conflict Resolution | 🔲 Not Started |
-| MVP-GIT-007 | History & Diff (UI Read Access) | 🔲 Not Started |
-| MVP-GIT-008 | ArangoDB Storage Backend | 🔲 Not Started |
-| MVP-GIT-009 | CodeValdCortex Integration | 🔲 Not Started |
+| MVP-DT-001 | Module Scaffolding | ⏸️ Blocked on SHAREDLIB-010 |
+| MVP-DT-002 | ArangoDB Backend | ⏸️ Blocked |
+| MVP-DT-003 | gRPC Service Proto & Codegen | ⏸️ Blocked |
+| MVP-DT-004 | gRPC Server Implementation | ⏸️ Blocked |
+| MVP-DT-005 | CodeValdCross Registration | ⏸️ Blocked |
+| MVP-DT-006 | Unit & Integration Tests | ⏸️ Blocked |
 
 ---
 
 ## Execution Order
 
 ```
-MVP-GIT-001 → MVP-GIT-002 → MVP-GIT-003 → MVP-GIT-004
-                                ↓
-                          MVP-GIT-005 → MVP-GIT-006
-                                ↓
-                          MVP-GIT-007
-                                ↓
-MVP-GIT-008 (parallel track)
-                                ↓
-                          MVP-GIT-009 (integration — last)
+SHAREDLIB-010 (unblocks all DT work)
+      ↓
+MVP-DT-001  ← Module scaffolding, go.mod, errors.go, models.go
+      ↓
+┌─────────────┬─────────────┐
+MVP-DT-002          MVP-DT-003
+(ArangoDB backend)  (proto + codegen)
+└─────────────┴─────────────┘
+      ↓
+MVP-DT-004  ← gRPC server implementation
+      ↓
+┌─────────────┬─────────────┐
+MVP-DT-005          MVP-DT-006
+(Cross registration) (tests)
 ```
-
----
-
-## Task Detail Files
-
-| File | Tasks |
-|---|---|
-| [mvp-details/repo-management.md](mvp-details/repo-management.md) | MVP-GIT-001, MVP-GIT-002 |
-| [mvp-details/branch-workflow.md](mvp-details/branch-workflow.md) | MVP-GIT-003, MVP-GIT-005, MVP-GIT-006 |
-| [mvp-details/file-operations.md](mvp-details/file-operations.md) | MVP-GIT-004 |
-| [mvp-details/history-and-diff.md](mvp-details/history-and-diff.md) | MVP-GIT-007 |
-| [mvp-details/storage-backends.md](mvp-details/storage-backends.md) | MVP-GIT-008 |
-| [mvp-details/integration.md](mvp-details/integration.md) | MVP-GIT-009 |
