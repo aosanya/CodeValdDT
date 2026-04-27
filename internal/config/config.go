@@ -1,5 +1,7 @@
 // Package config loads CodeValdDT runtime configuration from environment
-// variables.
+// variables. All values have sensible defaults so the service starts in
+// standalone mode (no Cross registration, default ArangoDB target) with zero
+// environment variables set apart from CODEVALDDT_PORT.
 package config
 
 import (
@@ -10,11 +12,10 @@ import (
 
 // Config holds all runtime configuration for the CodeValdDT service.
 type Config struct {
-	// GRPCPort is the port the gRPC server listens on (required, set in .env).
+	// GRPCPort is the port the gRPC server listens on. Required.
 	GRPCPort string
 
-	// ArangoEndpoint is the ArangoDB HTTP endpoint
-	// (default "http://localhost:8529").
+	// ArangoEndpoint is the ArangoDB HTTP endpoint (default "http://localhost:8529").
 	ArangoEndpoint string
 
 	// ArangoUser is the ArangoDB username (default "root").
@@ -23,43 +24,47 @@ type Config struct {
 	// ArangoPassword is the ArangoDB password.
 	ArangoPassword string
 
-	// ArangoDatabase is the pre-existing ArangoDB database name
-	// (e.g. "codevald_demo"). CodeValdDT does NOT create the database — it
-	// connects to an existing one and ensures its collections exist on boot.
+	// ArangoDatabase is the ArangoDB database name (default "codevalddt").
 	ArangoDatabase string
 
-	// CrossGRPCAddr is the CodeValdCross gRPC address for registration
-	// heartbeats and event publishing. Empty string disables registration.
+	// CrossGRPCAddr is the CodeValdCross gRPC address used for heartbeat
+	// registration. Empty string disables registration (standalone mode).
 	CrossGRPCAddr string
 
-	// AdvertiseAddr is the address CodeValdCross dials back on
-	// (default ":GRPCPort").
+	// AdvertiseAddr is the address CodeValdCross dials back on.
+	// Defaults to ":GRPCPort" when unset.
 	AdvertiseAddr string
 
-	// AgencyID is the agency identifier sent in every Register heartbeat to
-	// CodeValdCross. Required when CrossGRPCAddr is set.
+	// AgencyID is the agency this instance is scoped to, sent in every
+	// Register heartbeat. Empty string means this instance serves all agencies.
 	AgencyID string
 
 	// PingInterval is the heartbeat cadence sent to CodeValdCross
-	// (default 20s — the platform liveness contract).
+	// (default 20s — the DT liveness contract).
+	// Set to 0 to send only the initial registration ping.
 	PingInterval time.Duration
 
 	// PingTimeout is the per-RPC timeout for each Register call (default 5s).
 	PingTimeout time.Duration
 }
 
-// Load reads configuration from environment variables, falling back to
-// defaults for any variable that is unset or empty.
+// Load reads runtime configuration from environment variables, falling back to
+// sensible defaults for any variable that is unset or empty.
 //
-// Required:
-//   - CODEVALDDT_GRPC_PORT
+// Environment variables:
 //
-// Optional (all have defaults):
-//   - DT_ARANGO_ENDPOINT, DT_ARANGO_USER, DT_ARANGO_PASSWORD, DT_ARANGO_DATABASE
-//   - CROSS_GRPC_ADDR, DT_GRPC_ADVERTISE_ADDR, CODEVALDDT_AGENCY_ID
-//   - CROSS_PING_INTERVAL, CROSS_PING_TIMEOUT
+//	CODEVALDDT_PORT          gRPC listener port (required)
+//	DT_ARANGO_ENDPOINT       ArangoDB endpoint (default "http://localhost:8529")
+//	DT_ARANGO_USER           ArangoDB username (default "root")
+//	DT_ARANGO_PASSWORD       ArangoDB password
+//	DT_ARANGO_DATABASE       ArangoDB database name (default "codevalddt")
+//	CROSS_GRPC_ADDR          CodeValdCross gRPC address (default ""; disables registration)
+//	DT_GRPC_ADVERTISE_ADDR   address Cross dials back on (default ":PORT")
+//	CODEVALDDT_AGENCY_ID     agency scope for this instance (default "")
+//	CROSS_PING_INTERVAL      heartbeat cadence Go duration string (default "20s")
+//	CROSS_PING_TIMEOUT       per-RPC Register timeout, Go duration string (default "5s")
 func Load() Config {
-	port := serverutil.MustGetEnv("CODEVALDDT_GRPC_PORT")
+	port := serverutil.MustGetEnv("CODEVALDDT_PORT")
 	return Config{
 		GRPCPort:       port,
 		ArangoEndpoint: serverutil.EnvOrDefault("DT_ARANGO_ENDPOINT", "http://localhost:8529"),

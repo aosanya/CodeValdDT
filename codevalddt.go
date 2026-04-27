@@ -13,25 +13,10 @@
 // dedicated storage collections (`dt_telemetry`, `dt_events`) by setting
 // [types.TypeDefinition.StorageCollection] on the agency-defined types — they
 // are NOT separate Go types and have no separate gRPC service.
+//
+// Public API surface:
+//   - [DTDataManager] / [DTSchemaManager] — entitygraph aliases (see models.go)
+//   - [CrossPublisher] — best-effort lifecycle event publisher (see models.go)
+//   - [DefaultDTSchema] — empty pre-delivered schema scaffold (see schema.go)
+//   - [Err...] — typed errors (see errors.go)
 package codevalddt
-
-import (
-	"context"
-
-	"github.com/aosanya/CodeValdSharedLib/entitygraph"
-)
-
-// DTSchemaManager is a type alias for [entitygraph.SchemaManager].
-// Used by internal/app to seed [DefaultDTSchema] (an empty schema scaffold) so
-// that the agency is bootstrapped and ready to accept agency-defined types.
-type DTSchemaManager = entitygraph.SchemaManager
-
-// CrossPublisher publishes DT lifecycle events to CodeValdCross.
-// Implementations must be safe for concurrent use. A nil CrossPublisher is
-// valid — publish calls are silently skipped.
-type CrossPublisher interface {
-	// Publish delivers an event for the given topic and agencyID to
-	// CodeValdCross. Errors are non-fatal: implementations should log and
-	// return nil for best-effort delivery.
-	Publish(ctx context.Context, topic string, agencyID string) error
-}
