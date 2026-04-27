@@ -44,7 +44,7 @@ DTDataManager.CreateEntity(ctx, req)
     ├── validate: req.AgencyID, req.TypeID non-empty
     │       → ErrInvalidEntity if violated
     │
-    ├── dtSchemaManager.GetSchema(ctx, req.AgencyID, activeVersion)
+    ├── dtSchemaManager.GetSchema(ctx, req.AgencyID, /* Schema.Active == true */)
     │       → resolve TypeDefinition for req.TypeID
     │       → ErrSchemaNotFound if no active schema exists
     │       → collection = TypeDefinition.StorageCollection
@@ -80,6 +80,20 @@ inside `properties`.
 > `ListEntities` filtered by `TypeID` and (when implemented in
 > `entitygraph.EntityFilter`) a time range against `properties.timestamp`.
 
+> **Active schema selection**: `DTSchemaManager.GetSchema` returns the single
+> `Schema` document for the agency whose `Active` flag is `true`. Only one
+> published schema per agency is active at a time; drafts have `Active:
+> false`. See [`types.Schema.Active`](file:///workspaces/CodeVald-AIProject/CodeValdSharedLib/types/schema.go) in
+> `CodeValdSharedLib/types/schema.go` for the field definition.
+
+> **Default ordering on time-series collections**: when the resolved
+> `TypeDefinition.StorageCollection` is `"dt_telemetry"` or `"dt_events"`,
+> `ListEntities` returns rows sorted by `properties.timestamp ASC`. This is a
+> property of the `entitygraph.EntityFilter` contract (tracked in
+> `SHAREDLIB-014`) — the AQL query orders on `properties.timestamp`, served
+> by the existing `(properties.entityID, properties.timestamp)` persistent
+> index.
+
 ---
 
 ## 10. UpdateEntity Flow (Immutability Guard)
@@ -96,7 +110,7 @@ DTDataManager.UpdateEntity(ctx, agencyID, entityID, req)
     ├── backend.GetEntity(ctx, agencyID, entityID)
     │       → ErrEntityNotFound if not found or already deleted
     │
-    ├── dtSchemaManager.GetSchema(ctx, agencyID, activeVersion)
+    ├── dtSchemaManager.GetSchema(ctx, agencyID, /* Schema.Active == true */)
     │       → resolve TypeDefinition for entity.TypeID
     │       → if TypeDefinition.Immutable == true → ErrImmutableType
     │

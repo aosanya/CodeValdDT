@@ -1,7 +1,7 @@
 # Binaries
 /bin/
 /main
-codevaldgit
+codevalddt
 
 # Environment — never commit real credentials
 .env
@@ -12,3 +12,4 @@ coverage.html
 
 # OS
 .DS_Store
+integration-test.log
