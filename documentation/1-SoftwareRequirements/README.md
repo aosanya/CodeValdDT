@@ -28,8 +28,8 @@ CodeValdDT is a **Go gRPC microservice** that manages the Digital Twin layer of 
 | FR-001 | Entity lifecycle (create / read / update / delete / list), scoped by `agencyID` |
 | FR-002 | Graph relationships stored in an ArangoDB **edge collection** (`dt_relationships`) |
 | FR-003 | Graph traversal by depth and direction via AQL on the `dt_graph` named graph |
-| FR-004 | Telemetry recording and historical queries per entity |
-| FR-005 | Per-entity event log (append + chronological list) |
-| FR-006 | Pub/sub via CodeValdCross — `cross.dt.{agencyID}.entity.created` and `cross.dt.{agencyID}.telemetry.recorded` |
+| FR-004 | Telemetry readings stored as `Entity` instances routed to `dt_telemetry` via `TypeDefinition.StorageCollection`; queryable by source entity and time range |
+| FR-005 | Events stored as `Entity` instances routed to `dt_events`; listable by source entity in chronological order |
+| FR-006 | Pub/sub via CodeValdCross — `entity.created`, `telemetry.recorded`, `event.recorded` topics, chosen from the resolved `StorageCollection` |
 | FR-007 | CodeValdCross registration heartbeat every 20 s as service `codevalddt` on `:50055` |
 | FR-008 | DTDL v3 compatible data model — exportable to Azure Digital Twins |

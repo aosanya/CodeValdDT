@@ -11,9 +11,14 @@ These are the five element types that go inside an Interface's `contents` array.
 Telemetry is data the twin **streams out** — sensor readings, computed values,
 alerts. It is not stored in the twin itself; it flows through.
 
-**CodeValdDT**: push a value with `RecordTelemetry(agencyID, entityID, name, value, timestamp)`.
-It is stored in the `telemetry` collection and the `cross.dt.{agencyID}.telemetry.recorded`
-event is published.
+**CodeValdDT**: a DTDL `Telemetry` declaration on a parent `Interface` is
+realised as its own `TypeDefinition` whose `StorageCollection` is
+`"dt_telemetry"` and `Immutable` is `true`. Readings are written by calling
+`CreateEntity` with that `typeID`; the source entity's `entityID`, the
+reading `value`, and the `timestamp` are carried inside `properties`. The
+record lands as an `Entity` document in `dt_telemetry`, and
+`cross.dt.{agencyID}.telemetry.recorded` is published. There is no separate
+`RecordTelemetry` RPC.
 
 ### Required fields
 

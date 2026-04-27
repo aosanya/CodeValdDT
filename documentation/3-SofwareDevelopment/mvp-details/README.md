@@ -40,21 +40,28 @@ gap below must be resolved before the matching topic file can be written.
   filterable field
 
 ### Area 3 — Telemetry
-- [ ] Shape is unresolved: are telemetry writes a first-class
-  `RecordTelemetry` RPC (per `requirements.md` FR-004) or routed
-  `CreateEntity` calls with `TypeDefinition.StorageCollection: "dt_telemetry"`
-  (per `architecture-flows.md` §9)? The proto in `architecture-service.md`
-  currently has neither dedicated RPC
-- [ ] No telemetry-name vocabulary, expected write frequency, or retention
-  policy
-- [ ] `cross.dt.{agencyID}.telemetry.recorded` publish trigger is undefined —
-  if telemetry is a routed entity create, the `CreateEntity` flow must branch
-  on `StorageCollection` to pick the right Cross topic
+- ✅ Resolved 2026-04-27: telemetry writes are routed `CreateEntity` calls
+  (`StorageCollection: "dt_telemetry"`, `Immutable: true`) — never a
+  dedicated RPC. `CreateEntity` flow now branches on `StorageCollection` to
+  pick the Cross topic. See [architecture-flows.md §9](../../2-SoftwareDesignAndArchitecture/architecture-flows.md)
+- [ ] No telemetry-`typeID` vocabulary slot defined (e.g. `TemperatureReading`,
+  `PressureReading`) — populate when an Agency domain is in scope
+- [ ] Expected write frequency and retention policy unspecified — needed to
+  size `dt_telemetry` and decide whether a TTL index is required
+- [ ] `EntityFilter` in `CodeValdSharedLib/entitygraph` does not yet carry
+  `TimeRangeFrom` / `TimeRangeTo` fields against `properties.timestamp`. Open
+  a SharedLib gap (`SHAREDLIB-XXX_entityfilter_time_range`) before FR-004's
+  time-range query becomes implementable
 
 ### Area 4 — Events
-- [ ] No concrete event-name vocabulary
-- [ ] Per-entity ordering guarantee not stated (timestamp-based is implied by
-  the `(entityID, timestamp)` index but not contracted)
+- ✅ Resolved 2026-04-27: events are routed `CreateEntity` calls
+  (`StorageCollection: "dt_events"`, `Immutable: true`) — never a dedicated
+  RPC; topic is `cross.dt.{agencyID}.event.recorded`
+- [ ] No event-`typeID` vocabulary slot defined (e.g. `ValveOpened`,
+  `AlarmRaised`) — populate when an Agency domain is in scope
+- [ ] Per-source-entity ordering guarantee not contracted (the
+  `properties.entityID, properties.timestamp` index makes timestamp-ordered
+  reads cheap, but the API doesn't promise it)
 
 ### Area 5 — Integration
 - [ ] No declared consumer of `cross.dt.{agencyID}.telemetry.recorded`

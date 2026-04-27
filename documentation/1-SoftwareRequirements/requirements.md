@@ -56,23 +56,34 @@ and events.
   that includes the `relationships` edge collection
 
 ### FR-004: Telemetry
-- The service must support recording telemetry readings against an entity
-  (name, value, timestamp)
-- Historical telemetry must be queryable by entity, optionally filtered by
-  time range
-- After every successful `RecordTelemetry`, publish
-  `cross.dt.{agencyID}.telemetry.recorded` via CodeValdCross
+- Telemetry readings are recorded as `Entity` instances — not as a separate
+  type — by calling `CreateEntity` with a `typeID` whose `TypeDefinition` has
+  `StorageCollection: "dt_telemetry"` and `Immutable: true`. The reading's
+  source `entityID`, `value`, and `timestamp` are carried in `properties`
+- Historical telemetry must be queryable per producing entity, optionally
+  filtered by time range, via `ListEntities` against the `dt_telemetry`
+  collection
+- The service must NOT expose a `RecordTelemetry` / `QueryTelemetry` RPC —
+  telemetry travels through the entity API
 
 ### FR-005: Events
-- The service must support appending events to an entity's event log
-  (name, payload, timestamp)
-- Events must be listable per entity in chronological order
+- Events are recorded as `Entity` instances — not as a separate type — by
+  calling `CreateEntity` with a `typeID` whose `TypeDefinition` has
+  `StorageCollection: "dt_events"` and `Immutable: true`. The event's source
+  `entityID`, `payload`, and `timestamp` are carried in `properties`
+- Events must be listable per producing entity in chronological order via
+  `ListEntities` against the `dt_events` collection
+- The service must NOT expose a `RecordEvent` / `ListEvents` RPC — events
+  travel through the entity API
 
 ### FR-006: Pub/Sub (v1)
-- After every successful `CreateEntity`, publish
-  `cross.dt.{agencyID}.entity.created`
-- After every successful `RecordTelemetry`, publish
-  `cross.dt.{agencyID}.telemetry.recorded`
+- After every successful `CreateEntity`, publish a Cross topic chosen by the
+  resolved `TypeDefinition.StorageCollection`:
+  - `dt_entities`  → `cross.dt.{agencyID}.entity.created`
+  - `dt_telemetry` → `cross.dt.{agencyID}.telemetry.recorded`
+  - `dt_events`    → `cross.dt.{agencyID}.event.recorded`
+- Publish failures must be logged but not surfaced to the caller — the entity
+  is already persisted
 
 ### FR-007: CodeValdCross Registration
 - On startup, register with CodeValdCross using service name `codevalddt`

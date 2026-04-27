@@ -53,22 +53,32 @@ DTDataManager.CreateEntity(ctx, req)
     ├── backend.InsertEntity(ctx, req, collection)    → resolved collection
     │       returns Entity{ID, AgencyID, TypeID, Properties, CreatedAt, UpdatedAt}
     │
-    └── crossPublisher.Publish(ctx,
-            "cross.dt.{agencyID}.entity.created",
-            entity.ID)
-            │
+    └── crossPublisher.Publish(ctx, topic, entity.ID)
+            │   topic is selected from the resolved StorageCollection:
+            │     "dt_entities"  → cross.dt.{agencyID}.entity.created
+            │     "dt_telemetry" → cross.dt.{agencyID}.telemetry.recorded
+            │     "dt_events"    → cross.dt.{agencyID}.event.recorded
             ▼
-        Cross routes event to subscribers
+        Cross routes the event to subscribers
 ```
 
-`cross.dt.{agencyID}.entity.created` **MUST be published** after every
-successful create — regardless of the resolved collection (entities,
-telemetry, events). Publish failures are logged but not returned to the
-caller — the entity is already persisted.
+A topic **MUST be published** after every successful create. Publish failures
+are logged but not returned to the caller — the entity is already persisted.
 
-Telemetry readings and events are created via this same flow with a TypeID
-whose `TypeDefinition` has `StorageCollection: "dt_telemetry"` or
-`"dt_events"` and `Immutable: true`.
+**Telemetry readings** are created via this same flow with a `typeID` whose
+`TypeDefinition` has `StorageCollection: "dt_telemetry"` and `Immutable: true`.
+The reading's `value`, source `entityID`, and reading `timestamp` are carried
+inside `properties`.
+
+**Events** follow the identical pattern with `StorageCollection: "dt_events"`
+and `Immutable: true`. Payload, source `entityID`, and event `timestamp` live
+inside `properties`.
+
+> Telemetry and events are **never** modelled as separate Go types — they are
+> `Entity` instances throughout. There is no `RecordTelemetry` /
+> `RecordEvent` / `QueryTelemetry` / `ListEvents` RPC; reads use
+> `ListEntities` filtered by `TypeID` and (when implemented in
+> `entitygraph.EntityFilter`) a time range against `properties.timestamp`.
 
 ---
 

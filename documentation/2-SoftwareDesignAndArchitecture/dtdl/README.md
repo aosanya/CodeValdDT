@@ -43,8 +43,8 @@ The six building blocks:
 |---|---|
 | `Interface` | `EntityTypeDefinition` on the Agency |
 | `Property` | `Entity.Properties` map field |
-| `Telemetry` | `RecordTelemetry` gRPC call → stored in `telemetry` collection |
-| `Relationship` | `CreateRelationship` gRPC call → stored in ArangoDB **edge collection** |
+| `Telemetry` | `CreateEntity` with a `typeID` whose `TypeDefinition` has `StorageCollection: "dt_telemetry"` and `Immutable: true` — reading is stored as an `Entity` document in `dt_telemetry` |
+| `Relationship` | `CreateRelationship` gRPC call → stored in ArangoDB **edge collection** (`dt_relationships`) |
 | `Command` | Not implemented in v1 |
 | `Component` | Not implemented in v1 |
 
@@ -86,6 +86,10 @@ Every DTDL document starts with this line — it tells parsers which version to 
 }
 ```
 
-In CodeValdDT terms: `Thermostat` is an `EntityTypeDefinition`. The `temp`
-field becomes a telemetry reading you push via `RecordTelemetry`. The
-`setPointTemp` field becomes an entry in `Entity.Properties`.
+In CodeValdDT terms: `Thermostat` is an `EntityTypeDefinition`. The
+`setPointTemp` field becomes an entry in `Entity.Properties` on a `Thermostat`
+entity. The `temp` field becomes a separate telemetry `TypeDefinition` (e.g.
+`ThermostatTemp`) with `StorageCollection: "dt_telemetry"` and `Immutable:
+true` — readings are written as `Entity` instances via `CreateEntity`, with
+the source thermostat's `entityID`, the `value`, and the `timestamp` carried
+in `properties`.

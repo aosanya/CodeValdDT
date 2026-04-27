@@ -55,8 +55,11 @@ actual entity instances.
 }
 ```
 
-**CodeValdDT mapping**: `temp` is pushed via `RecordTelemetry`. `setPointTemp`
-is a key in `Entity.Properties`.
+**CodeValdDT mapping**: `setPointTemp` is a key in the `Properties` map of a
+`Thermostat` entity. `temp` is realised as its own `TypeDefinition` (e.g.
+`ThermostatTemp`) with `StorageCollection: "dt_telemetry"` and `Immutable:
+true`; each reading is written as an `Entity` via `CreateEntity` and lands in
+the `dt_telemetry` collection.
 
 ---
 

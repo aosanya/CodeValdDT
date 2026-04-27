@@ -37,5 +37,5 @@ CodeValdAgency and is compatible with Azure Digital Twins for future migration.
 - **Collections**: `entities` (document), `relationships` (edge), `telemetry` (document), `events` (document)
 - **Graph traversal**: ArangoDB native graph via edge collection
 - **Schema standard**: DTDL v3 (Azure Digital Twins compatible)
-- **Pub/sub (v1)**: produces `cross.dt.{agencyID}.entity.created` and `cross.dt.{agencyID}.telemetry.recorded`
+- **Pub/sub (v1)**: produces `cross.dt.{agencyID}.entity.created`, `cross.dt.{agencyID}.telemetry.recorded`, and `cross.dt.{agencyID}.event.recorded` — topic chosen by the resolved `TypeDefinition.StorageCollection`
 - **Registration**: CodeValdCross heartbeat every 20 s

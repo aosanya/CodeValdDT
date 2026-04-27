@@ -18,13 +18,15 @@ CodeValdDT provides the following top-level capabilities to the rest of the Code
 - **Graph traversal** from a starting entity by `Direction` (`outbound` / `inbound` / `any`) and `Depth`, returning both vertices and edges in one round-trip
 
 ### 3. Telemetry
-- Record telemetry readings (`name`, `value`, `timestamp`) against an entity
-- Query historical telemetry per entity, optionally filtered by time range
+- Telemetry readings are **`Entity` instances** — never a separate Go type — created via `CreateEntity` with a `typeID` whose `TypeDefinition` has `StorageCollection: "dt_telemetry"` and `Immutable: true`
+- The reading's source `entityID`, `value`, and `timestamp` are carried inside `properties`; the document is stored in the `dt_telemetry` collection
+- Query historical telemetry per source entity (and optionally by time range) via `ListEntities` against `dt_telemetry`
 - Every successful record fires `cross.dt.{agencyID}.telemetry.recorded` on CodeValdCross
 
 ### 4. Events
-- Append events (`name`, `payload`, `timestamp`) to an entity's event log
-- List events per entity in chronological order
+- Events are **`Entity` instances** routed identically — `StorageCollection: "dt_events"`, `Immutable: true` — with source `entityID`, `payload`, and `timestamp` in `properties`
+- List events per source entity in chronological order via `ListEntities` against `dt_events`
+- Every successful record fires `cross.dt.{agencyID}.event.recorded`
 
 ### 5. Schema Management (DTDL v3 Compatible)
 - `DTSchemaManager` owns `SetSchema`, `GetSchema`, `ListSchemaVersions` against the `dt_schemas` collection

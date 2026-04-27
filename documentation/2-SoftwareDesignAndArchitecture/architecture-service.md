@@ -58,7 +58,6 @@ service DTService {
     // edges (repeated Relationship) — matches TraverseGraphResult in models.go.
     rpc TraverseGraph        (TraverseGraphRequest)        returns (TraverseGraphResponse);
 }
-}
 ```
 
 Generated Go code lives in `gen/go/`. **Never hand-edit generated files.**
@@ -77,6 +76,7 @@ RegisterRequest{
     Produces: []string{
         "cross.dt.{agencyID}.entity.created",
         "cross.dt.{agencyID}.telemetry.recorded",
+        "cross.dt.{agencyID}.event.recorded",
     },
     Consumes: []string{},
     Routes: []Route{
