@@ -33,18 +33,19 @@ All contributions must satisfy:
 Tests live alongside source files using Go's standard `_test.go` convention:
 
 ```
-manager_test.go       ← RepoManager lifecycle tests
-repo_test.go          ← Repo operation tests
+internal/
+  manager/
+    manager_test.go   ← DTDataManager unit tests (mock DTSchemaManager + Cross publisher)
+  server/
+    server_test.go    ← gRPC handler tests (table-driven; mock DTDataManager)
+  registrar/
+    registrar_test.go ← Cross heartbeat loop tests
 storage/
   arangodb/
-    objects_test.go   ← ArangoDB object storer tests
-    refs_test.go      ← ArangoDB ref storer tests
-internal/
-  rebase/
-    rebase_test.go    ← Cherry-pick rebase tests
+    storage_test.go   ← ArangoDB DTSchemaManager + collection/index bootstrap tests
 ```
 
-Integration tests that require external services (ArangoDB) must use `t.Skip()` when `ARANGODB_URL` is not set.
+Integration tests that require external services (ArangoDB, CodeValdCross) must be tagged `//go:build integration` and use `t.Skip()` when `DT_ARANGO_URL` / `CROSS_ADDR` is not set.
 
 ---
 

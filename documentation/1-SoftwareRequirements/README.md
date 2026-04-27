@@ -2,7 +2,7 @@
 
 ## Overview
 
-This section captures everything **what** CodeValdGit must do and **why** — without prescribing how.
+This section captures the **what** and **why** for CodeValdDT — without prescribing how.
 
 ---
 
@@ -11,25 +11,25 @@ This section captures everything **what** CodeValdGit must do and **why** — wi
 | Document | Description |
 |---|---|
 | [requirements.md](requirements.md) | Functional requirements (FR-001–FR-008), non-functional requirements, scope, and resolved open questions |
-| [introduction/problem-definition.md](introduction/problem-definition.md) | Problem statement and motivation for the library |
+| [introduction/problem-definition.md](introduction/problem-definition.md) | Problem statement and motivation for the service |
 | [introduction/high-level-features.md](introduction/high-level-features.md) | High-level capability summary |
-| [introduction/stakeholders.md](introduction/stakeholders.md) | Consumers and stakeholders of the library |
+| [introduction/stakeholders.md](introduction/stakeholders.md) | Consumers and stakeholders of the service |
 
 ---
 
 ## Summary
 
-CodeValdGit is a **Go library** that provides Git-based artifact versioning for [CodeValdCortex](../../CodeValdCortex/README.md). It replaces the hand-rolled Git engine (`internal/git/`) with proper Git semantics backed by [go-git](https://github.com/go-git/go-git).
+CodeValdDT is a **Go gRPC microservice** that manages the Digital Twin layer of the CodeVald platform — a live, graph-structured model of an Agency's real-world entities (machines, people, locations, industrial assets, …) backed by ArangoDB. Schemas are DTDL v3 compatible for future migration to Azure Digital Twins.
 
 ### Core Requirements at a Glance
 
 | FR | Requirement |
 |---|---|
-| FR-001 | One Git repository per Agency |
-| FR-002 | Any file type (text and binary) |
-| FR-003 | Branch-per-task workflow — agents never commit to `main` |
-| FR-004 | Commit attribution (agent ID + message) |
-| FR-005 | File operations (read/write/delete/list at any ref) |
-| FR-006 | Merge conflict resolution via auto-rebase; structured error returned |
-| FR-007 | Repository archiving on Agency deletion (never hard-delete immediately) |
-| FR-008 | History and diff read access for the CodeValdCortex UI |
+| FR-001 | Entity lifecycle (create / read / update / delete / list), scoped by `agencyID` |
+| FR-002 | Graph relationships stored in an ArangoDB **edge collection** (`dt_relationships`) |
+| FR-003 | Graph traversal by depth and direction via AQL on the `dt_graph` named graph |
+| FR-004 | Telemetry recording and historical queries per entity |
+| FR-005 | Per-entity event log (append + chronological list) |
+| FR-006 | Pub/sub via CodeValdCross — `cross.dt.{agencyID}.entity.created` and `cross.dt.{agencyID}.telemetry.recorded` |
+| FR-007 | CodeValdCross registration heartbeat every 20 s as service `codevalddt` on `:50055` |
+| FR-008 | DTDL v3 compatible data model — exportable to Azure Digital Twins |

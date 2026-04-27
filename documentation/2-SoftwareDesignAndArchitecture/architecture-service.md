@@ -76,6 +76,7 @@ RegisterRequest{
     Addr:        ":50055",
     Produces: []string{
         "cross.dt.{agencyID}.entity.created",
+        "cross.dt.{agencyID}.telemetry.recorded",
     },
     Consumes: []string{},
     Routes: []Route{

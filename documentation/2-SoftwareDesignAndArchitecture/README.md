@@ -2,7 +2,7 @@
 
 ## Overview
 
-This section captures the **how** — design decisions, data models, component architecture, and technical constraints for CodeValdGit.
+This section captures the **how** — design decisions, data models, component architecture, and technical constraints for CodeValdDT.
 
 ---
 
@@ -10,7 +10,12 @@ This section captures the **how** — design decisions, data models, component a
 
 | Document | Description |
 |---|---|
-| [architecture.md](architecture.md) | Core design decisions, storage backends, branching model, draft API interfaces, CodeValdCortex integration table |
+| [architecture.md](architecture.md) | Top-level index over the four focused architecture files below |
+| [architecture-interfaces.md](architecture-interfaces.md) | Core design decisions; `DTDataManager` + `DTSchemaManager` interfaces; `Entity` / `Relationship` / `DTSchema` / `TypeDefinition` data models |
+| [architecture-service.md](architecture-service.md) | Package structure; `DTService` gRPC definition; CodeValdCross registration heartbeat |
+| [architecture-storage.md](architecture-storage.md) | ArangoDB schema — collections (`dt_schemas`, `dt_entities`, `dt_relationships`, `dt_telemetry`, `dt_events`), document shapes, indexes, named graph |
+| [architecture-flows.md](architecture-flows.md) | Error-to-gRPC mapping; CreateEntity flow; UpdateEntity immutability guard; DeleteEntity soft-delete flow; SharedLib dependency |
+| [dtdl/](dtdl/README.md) | DTDL v3 reference — Interface, contents, schemas, additional concerns |
 
 ---
 
@@ -18,31 +23,12 @@ This section captures the **how** — design decisions, data models, component a
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Git engine | go-git (pure Go) | No system `git` binary dependency; embeddable in Go services |
-| Repo granularity | 1 repo per Agency | Mirrors CodeValdCortex's database-per-agency isolation |
-| Agent write policy | Always on a branch, never `main` | Prevents concurrent agent writes from corrupting shared history |
-| Branch naming | `task/{task-id}` | Short-lived, traceable back to CodeValdCortex task records |
-| Merge strategy | Auto-merge on task completion | No human approval gate for now; policy layer can extend later |
-| Storage backend | Pluggable via `storage.Storer` | Caller injects the storer — filesystem and ArangoDB are both valid |
-| Worktree filesystem | Pluggable via `billy.Filesystem` | Both storage and worktree are independently injectable |
-| Merge conflict handling | Manual cherry-pick rebase | go-git v5 only supports FastForwardMerge natively |
-
----
-
-## Component Architecture
-
-```
-github.com/aosanya/CodeValdGit    ← root package (library entry point)
-├── manager.go                    # RepoManager interface + filesystem implementation
-├── repo.go                       # Repo interface + implementation
-├── errors.go                     # Exported error types (ErrMergeConflict, etc.)
-├── models.go                     # FileEntry, Commit, FileDiff value types
-├── storage/
-│   └── arangodb/                 # ArangoDB storage.Storer implementation
-│       ├── objects.go            # Git object storage (blobs, trees, commits, tags)
-│       ├── refs.go               # Branch and tag references
-│       ├── index.go              # Staging area index
-│       └── config.go             # Per-repo Git config
-└── internal/
-    └── rebase/                   # Manual cherry-pick rebase (go-git plumbing layer)
-```
+| Business-logic entry point | `DTDataManager = entitygraph.DataManager` (SharedLib) | Shared with CodeValdComm; gRPC handlers stay thin |
+| Schema management | `DTSchemaManager = entitygraph.SchemaManager` | `dt_schemas` is owned by the schema manager; data manager has no schema methods |
+| Storage | ArangoDB — single shared database (`DT_ARANGO_DATABASE`); collections scoped by `agencyID` field | Matches platform env-var convention; one DB to operate |
+| Graph storage | ArangoDB **edge collection** `dt_relationships` + named graph `dt_graph` | Native AQL graph traversal; no separate graph engine |
+| Entity deletion | Soft delete (`deleted` + `deletedAt`) — no cascade | Preserves telemetry/event history; orphan cleanup deferred to v2 |
+| Type immutability | Driven by `TypeDefinition.Immutable` — `UpdateEntity` returns `ErrImmutableType` | Telemetry/event records can't be edited after write |
+| Storage routing | Driven by `TypeDefinition.StorageCollection` (`dt_entities` default; `dt_telemetry` / `dt_events` for routed types) | No hard-coded type checks in the manager |
+| Cross integration | Registration heartbeat every 20 s; pub/sub via SharedLib `gen/go/codevaldcross/v1` `Publish` stub | Platform standard; agencyID-scoped topics |
+| No cross-service Go imports | All cross-service calls go through gRPC | Stable versioned contracts; independent deployment |

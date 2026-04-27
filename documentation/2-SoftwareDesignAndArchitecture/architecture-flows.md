@@ -144,5 +144,6 @@ CodeValdDT imports `github.com/aosanya/CodeValdSharedLib` for:
 > SharedLib. CodeValdDT retains only domain logic, domain errors, gRPC
 > handlers, and storage collection schemas.
 
-See task DT-012 in [mvp.md](../3-SofwareDevelopment/mvp.md) for SharedLib
-migration scope.
+See [mvp.md](../3-SofwareDevelopment/mvp.md) — every MVP-DT-* task depends on
+`SHAREDLIB-010`, which is the SharedLib migration that exposes the
+`entitygraph` and `arangoutil` packages used here.
