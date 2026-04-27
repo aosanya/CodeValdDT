@@ -1,27 +1,32 @@
 # Stakeholders
 
-## Primary Consumer
+## Primary Consumers
 
-| Stakeholder | Role | How They Use CodeValdGit |
+| Stakeholder | Role | How They Use CodeValdDT |
 |---|---|---|
-| **CodeValdCross** | Primary and only consumer | Imports `github.com/aosanya/CodeValdGit` as a Go module; calls `RepoManager` and `Repo` at Agency and Task lifecycle points |
+| **CodeValdCross** | Service registry + pub/sub bus | Receives `Register` heartbeat every 20 s; routes `cross.dt.{agencyID}.entity.created` and `cross.dt.{agencyID}.telemetry.recorded` events to subscribers |
+| **CodeValdCortex** (and any service that proxies through Cross) | Calls `DTService` over gRPC for entity / relationship / telemetry / event operations |
+| **CodeValdAgency** | Owner of the entity-type schema (DTDL v3 `Interface` definitions). CodeValdDT reads the schema via `DTSchemaManager.GetSchema` to resolve `TypeDefinition.StorageCollection` and `TypeDefinition.Immutable` |
 
 ---
 
-## CodeValdCross Integration Points
+## DTService Integration Points
 
-CodeValdCross calls CodeValdGit at these lifecycle events:
+CodeValdDT is invoked at these points by upstream services:
 
-| Event | CodeValdGit Call |
+| Event | DTService RPC |
 |---|---|
-| Agency created | `RepoManager.InitRepo(agencyID)` |
-| Agency deleted | `RepoManager.DeleteRepo(agencyID)` |
-| Task started | `Repo.CreateBranch(taskID)` |
-| Agent writes output | `Repo.WriteFile(taskID, path, content, ...)` |
-| Task completed | `Repo.MergeBranch(taskID)` → `Repo.DeleteBranch(taskID)` |
-| UI file browser | `Repo.ListDirectory(ref, path)` |
-| UI file view | `Repo.ReadFile(ref, path)` |
-| UI history view | `Repo.Log(ref, path)` |
+| Domain object created in an Agency | `CreateEntity` |
+| Read latest entity state | `GetEntity` |
+| Patch entity properties | `UpdateEntity` (rejected if `TypeDefinition.Immutable`) |
+| Remove an entity | `DeleteEntity` (soft delete) |
+| Browse entities of a given type | `ListEntities` |
+| Add a graph edge between two entities | `CreateRelationship` |
+| Read / remove a single edge | `GetRelationship`, `DeleteRelationship` |
+| List edges by `FromID` / `ToID` / `Name` | `ListRelationships` |
+| Walk the entity graph from a starting node | `TraverseGraph` (returns vertices + edges in one round-trip) |
+
+Telemetry and event writes route through the schema-driven `CreateEntity` flow when `TypeDefinition.StorageCollection` is set to `dt_telemetry` or `dt_events` (see [architecture-flows.md §9](../../2-SoftwareDesignAndArchitecture/architecture-flows.md)).
 
 ---
 
@@ -29,15 +34,16 @@ CodeValdCross calls CodeValdGit at these lifecycle events:
 
 | Stakeholder | Interest |
 |---|---|
-| **Platform operators** | Need `PurgeRepo` for permanent data removal; need archive path configuration |
-| **AI agents (indirect)** | Produce artifacts via CodeValdCross — their output is what gets committed; affected by merge conflict routing |
-| **End users (indirect)** | View artifact history and diffs through the CodeValdCross UI — powered by `Log` and `Diff` operations |
+| **CodeValdComm** | Uses the same `entitygraph.DataManager` and `entitygraph.SchemaManager` interfaces from `CodeValdSharedLib` for its own entity-graph store — so the contract must stay stable across both services |
+| **Platform operators** | Need to provision the shared ArangoDB database (`DT_ARANGO_DATABASE`); CodeValdDT creates collections and indexes idempotently on startup |
+| **AI agents (indirect)** | Read and update twin state via CodeValdCross-routed `DTService` calls; subscribe to `entity.created` / `telemetry.recorded` to react to world changes |
+| **End users (indirect)** | View twins, graphs, telemetry, and event history through the platform UI — powered by the read-side RPCs (`GetEntity`, `ListEntities`, `ListRelationships`, `TraverseGraph`) |
 
 ---
 
-## Library Maintainers
+## Service Maintainers
 
-The library is maintained as part of the **CodeVald** platform (CodeValdCross, CodeValdGit, CodeValdWork). Development follows:
-- Trunk-based development with short-lived feature branches (`feature/GIT-XXX_description`)
-- Pure Go — no `git` binary dependency
-- go-git v5 as the sole Git engine dependency
+CodeValdDT is maintained as part of the **CodeVald** platform alongside CodeValdCross, CodeValdAgency, CodeValdComm, CodeValdWork, and CodeValdGit. Development follows:
+- Trunk-based development with short-lived feature branches (`feature/DT-XXX_description`)
+- All shared infrastructure (registration, pub/sub stubs, ArangoDB connect, server bootstrap, entity-graph interfaces) lives in [`CodeValdSharedLib`](../../../../CodeValdSharedLib/) — CodeValdDT retains only domain logic, gRPC handlers, and storage collection bootstrap
+- DTDL v3 as the schema standard — keeps an Azure Digital Twins migration path open
