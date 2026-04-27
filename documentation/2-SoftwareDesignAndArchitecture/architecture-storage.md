@@ -135,3 +135,13 @@ and event timestamp live inside `properties`. `TypeDefinition.Immutable` is true
 | `dt_events` | `agencyID, typeID` | persistent | `ListEntities` by event type within an agency |
 | `dt_events` | `agencyID, deleted` | persistent | Exclude soft-deleted events |
 | `dt_events` | `properties.entityID, properties.timestamp` | persistent | Chronological event log per producing entity |
+
+### Default Ordering on Time-Series Collections
+
+When `ListEntities` resolves to a type whose `TypeDefinition.StorageCollection`
+is `"dt_telemetry"` or `"dt_events"`, the AQL query MUST sort rows by
+`properties.timestamp ASC`. The `(properties.entityID, properties.timestamp)`
+index supports this ordering at no extra cost when the call is also filtered
+by `properties.entityID`. The contract is enforced by the `EntityFilter`
+default-ordering rule tracked in
+[`SHAREDLIB-014`](../../../CodeValdSharedLib/documentation/3-SofwareDevelopment/mvp.md).

@@ -115,6 +115,7 @@ and events.
 | Test coverage | All business logic covered with `-race` tests |
 | No hardcoded storage | `Backend` interface injected via constructor |
 | No cross-service imports | All cross-service calls go through gRPC |
+| Telemetry write frequency | **Very High** — `dt_telemetry` is the hot collection; sustained ingestion must not block reads on `dt_entities` / `dt_relationships`. Implications: `Immutable: true` on every telemetry `TypeDefinition` (no UPDATE-on-write contention); composite `(properties.entityID, properties.timestamp)` index for time-range scans; retention policy is an open question (see §5) |
 
 ---
 
@@ -126,3 +127,6 @@ and events.
 | Live telemetry streaming (gRPC server-stream) | Deferred |
 | Entity deletion cascade to relationships/telemetry/events | **Resolved — no cascade in v1.** `DeleteEntity` soft-deletes only the entity; its relationships, telemetry, and events are retained as-is. Orphan cleanup deferred to v2. |
 | Soft delete vs. hard delete for entities | **Resolved — soft delete.** `DeleteEntity` sets `deleted: true` and `deletedAt` on the document. Hard delete is not exposed in v1. |
+| Telemetry retention policy (TTL on `dt_telemetry`) | **Parked** (2026-04-27) — write frequency is **Very High** so `dt_telemetry` will grow fast. Options: keep all readings indefinitely, or apply an ArangoDB TTL index on `properties.timestamp` with a configurable window. Revisit when an Agency's traffic profile is in scope. Until resolved, MVP-DT-002 should bootstrap `dt_telemetry` **without** a TTL index — adding one later is non-destructive. |
+| `TraverseGraph` max-depth ceiling | **Parked** (2026-04-27) — current AQL template uses an unbounded `@depth` parameter. Decision needed before deep-graph use cases land: clamp server-side (e.g. 10 hops, returning `InvalidArgument` above) or trust the caller. Until resolved, MVP-DT-004 should pass the caller's `Depth` through unchanged. |
+| `EntityFilter` time-range + ordering | Tracked in CodeValdSharedLib as `SHAREDLIB-014`. Not a blocker for DT MVP scaffolding; required before FR-004 time-range queries are implementable. |
