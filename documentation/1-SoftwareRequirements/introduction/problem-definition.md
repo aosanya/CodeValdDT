@@ -2,43 +2,39 @@
 
 ## The Problem
 
-[CodeValdCortex](../../../CodeValdCortex/README.md) is an enterprise multi-agent AI orchestration platform. AI agents inside CodeValdCortex produce **artifacts** — code files, Markdown reports, YAML configs, and any other file type — as the outputs of tasks.
+[CodeValdCortex](../../../CodeValdCortex/README.md) is an enterprise multi-agent AI orchestration platform. Each Agency the platform serves operates over a domain of real-world entities — machines on a factory floor, vehicles in a fleet, people in a population, sensors on a network — and the **state, relationships, and history** of those entities is the source of truth that agents reason over.
 
-Before CodeValdGit, CodeValdCortex managed these artifacts using a **custom hand-rolled Git engine** in `internal/git/` backed by ArangoDB:
+Before CodeValdDT, the platform had no first-class place to store this state:
 
-| Component | Problem |
+| Pain | Consequence |
 |---|---|
-| `internal/git/ops/` | Custom SHA-1 object engine — reinvented Git from scratch, bug-prone |
-| `internal/git/storage/` | ArangoDB `git_objects` / `git_refs` collections — tightly coupled to ArangoDB |
-| `internal/git/fileindex/` | ArangoDB-backed file index — separate system that could drift from Git state |
-| `internal/git/models/` | Custom `GitObject`, `GitTree`, `GitCommit` structs — incompatible with standard tooling |
-
-**Consequences:**
-- Hard to maintain — any Git edge case required custom fixes
-- No standard merge strategy — concurrent agent writes had no safe reconciliation
-- No history browsing — UI couldn't navigate file history or compare branches
-- No portability — artifacts were locked inside ArangoDB, unreadable by standard Git tools
+| Entity state lived in ad-hoc per-service tables | Every consumer reinvented its own schema; nothing was shareable |
+| No graph between entities | Questions like "which assets does pump P-12 connect to?" required custom SQL/AQL each time |
+| No telemetry log | Time-series readings (temperature, pressure, status changes) had no agreed home |
+| No event log per entity | Lifecycle history (`valve_opened`, `alarm_raised`) was scattered across logs and DBs |
+| No standard schema language | Agency domains couldn't be exported to or migrated from external twin platforms |
 
 ---
 
 ## The Solution
 
-Replace `internal/git/` with **CodeValdGit** — a proper Go library backed by [go-git](https://github.com/go-git/go-git):
+CodeValdDT is a **Go gRPC microservice** that owns the Digital Twin layer:
 
-- **Real Git semantics** — branches, commits, merges, diffs — all via go-git's pure-Go engine
-- **Task isolation** — every agent task works on its own `task/{task-id}` branch
-- **Auto-rebase** — when `main` has advanced, the library rebases the task branch automatically
-- **Pluggable storage** — filesystem (default) or ArangoDB, injected by the caller
-- **Portable artifacts** — every repo is a valid `.git` directory, readable by any Git client
+- **Entities** — typed, versioned, scoped by `agencyID`, soft-deleted on removal
+- **Relationships** — directed graph edges stored as an ArangoDB **edge collection**, traversable via AQL
+- **Telemetry** — time-series readings, queryable by entity and time range
+- **Events** — append-only per-entity event log
+- **Schema** — DTDL v3 compatible (Azure Digital Twins migration path) — schema documents live in `dt_schemas` and are managed by `DTSchemaManager`
+- **Pub/sub** — emits `cross.dt.{agencyID}.entity.created` and `cross.dt.{agencyID}.telemetry.recorded` via CodeValdCross
+- **Cross registration** — registers as service `codevalddt` on `:50055` with a 20-second liveness heartbeat
 
 ---
 
-## Scope of Replacement
+## Why a Separate Service
 
-| Replaced | Replacement |
+| Concern | Reason it lives in CodeValdDT, not in another service |
 |---|---|
-| `internal/git/ops/` | go-git object engine |
-| `internal/git/storage/` | `storage.Storer` (filesystem or ArangoDB) |
-| `internal/git/fileindex/` | go-git tree walking |
-| `internal/git/models/` | go-git plumbing types |
-| ArangoDB `git_objects`, `git_refs`, `repositories` | Dropped entirely |
+| Graph traversal | Needs ArangoDB edge collections + named graphs — wrong fit for relational stores |
+| Cross-Agency isolation | Every collection document carries `agencyID`; one shared database, scoped reads/writes |
+| Schema portability | DTDL v3 is the lingua franca of digital-twin platforms — CodeValdDT keeps the platform exportable |
+| Re-use | The same `entitygraph.DataManager` interface is used by CodeValdComm — defined in `CodeValdSharedLib` and aliased locally as `DTDataManager` |
