@@ -1,9 +1,8 @@
 package codevalddt
 
 import (
-	"context"
-
 	"github.com/aosanya/CodeValdSharedLib/entitygraph"
+	"github.com/aosanya/CodeValdSharedLib/eventbus"
 )
 
 // DTDataManager is the CodeValdDT alias for [entitygraph.DataManager].
@@ -18,12 +17,11 @@ type DTDataManager = entitygraph.DataManager
 // arangodb.NewBackend) and injects it into the [DTDataManager].
 type DTSchemaManager = entitygraph.SchemaManager
 
-// CrossPublisher publishes digital-twin lifecycle events to CodeValdCross.
-// Implementations must be safe for concurrent use. A nil CrossPublisher is
-// valid — Publish calls are silently skipped by callers.
-type CrossPublisher interface {
-	// Publish delivers an event for the given topic and agencyID to
-	// CodeValdCross. Errors are non-fatal: implementations should log and
-	// return nil for best-effort delivery — the entity is already persisted.
-	Publish(ctx context.Context, topic string, agencyID string) error
-}
+// CrossPublisher is the historical name for the event-publishing contract
+// CodeValdDT callers inject. As of MVP-WORK-014 it is a type alias for
+// [eventbus.Publisher] — the SharedLib package that unifies the publish
+// contract across CodeValdAgency, CodeValdComm, CodeValdDT, and CodeValdWork.
+//
+// New callers should refer to [eventbus.Publisher] directly; this alias
+// remains for source compatibility.
+type CrossPublisher = eventbus.Publisher

@@ -14,6 +14,7 @@ import (
 
 	codevalddt "github.com/aosanya/CodeValdDT"
 	egserver "github.com/aosanya/CodeValdSharedLib/entitygraph/server"
+	"github.com/aosanya/CodeValdSharedLib/eventbus"
 	sharedregistrar "github.com/aosanya/CodeValdSharedLib/registrar"
 	"github.com/aosanya/CodeValdSharedLib/schemaroutes"
 	"github.com/aosanya/CodeValdSharedLib/types"
@@ -95,14 +96,15 @@ func (r *Registrar) Close() {
 	r.heartbeat.Close()
 }
 
-// Publish implements [codevalddt.CrossPublisher].
-// It fires a best-effort notification for topic and agencyID.
-// Currently logs the event; a future iteration will call a Cross Publish RPC
-// once CodeValdCross exposes one. Errors are always nil — the DT operation
-// has already been persisted and must not be rolled back.
-func (r *Registrar) Publish(ctx context.Context, topic string, agencyID string) error {
-	log.Printf("registrar[codevalddt]: publish topic=%q agencyID=%q", topic, agencyID)
-	// TODO(CROSS-007): call OrchestratorService.Publish RPC when available.
+// Publish implements [eventbus.Publisher].
+// Best-effort notification — currently logs the event; a future iteration
+// will call a CodeValdCross Publish RPC once CodeValdCross exposes one.
+// Errors are always nil — the DT operation has already been persisted and
+// must not be rolled back.
+func (r *Registrar) Publish(_ context.Context, e eventbus.Event) error {
+	log.Printf("registrar[codevalddt]: publish topic=%q agencyID=%q payload=%T",
+		e.Topic, e.AgencyID, e.Payload)
+	// TODO(CROSS-XXX): call OrchestratorService.Publish RPC when available.
 	return nil
 }
 

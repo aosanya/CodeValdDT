@@ -9,6 +9,7 @@ import (
 	"time"
 
 	codevalddt "github.com/aosanya/CodeValdDT"
+	"github.com/aosanya/CodeValdSharedLib/eventbus"
 )
 
 // TestNew_ReturnsRegistrar verifies that New succeeds with a valid-looking
@@ -49,7 +50,7 @@ func TestRegistrar_PublishLogsTopic(t *testing.T) {
 	})
 
 	topic := "cross.dt.agency-7.entity.created"
-	if err := r.Publish(context.Background(), topic, "agency-7"); err != nil {
+	if err := r.Publish(context.Background(), eventbus.Event{Topic: topic, AgencyID: "agency-7"}); err != nil {
 		t.Fatalf("Publish: unexpected error: %v", err)
 	}
 
