@@ -14,14 +14,15 @@ and `entitygraph.SchemaManager` from CodeValdSharedLib.
 |---|---|---|---|---|
 | ~~MVP-DT-003~~ | ~~gRPC Service Proto & Codegen~~ | ❌ Withdrawn (2026-04-27) | — | **Retired**: CodeValdDT exposes the shared `entitygraph.EntityService` (from CodeValdSharedLib) — agencies declare their own `TypeDefinition`s at runtime and storage routing is driven by `TypeDefinition.StorageCollection`, so a DT-specific proto would duplicate the shared surface. See [architecture-flows.md §9](../2-SoftwareDesignAndArchitecture/architecture-flows.md). |
 | ~~MVP-DT-004~~ | ~~gRPC Server Implementation~~ | ❌ Withdrawn (2026-04-27) | — | **Retired**: `internal/server/entity_server.go` re-exports `egserver.NewEntityServer`, and [`internal/app/app.go`](../../internal/app/app.go) registers `entitygraphpb.RegisterEntityServiceServer`. Handler logic, `toGRPCError`, and entity↔proto conversion all live in `CodeValdSharedLib/entitygraph/server`. |
-| MVP-DT-006 | Unit & Integration Tests | 🚧 In Progress | ~~MVP-DT-001~~ ✅, ~~MVP-DT-002~~ ✅ | Unit tests on DT-specific code (`internal/config`, `internal/registrar`, `storage/arangodb`, `schema.go`); integration test tagged `//go:build integration` boots `app.Run` against a real ArangoDB and exercises the EntityService gRPC surface end-to-end (entity CRUD, soft-delete exclusion, telemetry routing to `dt_telemetry` with `Immutable` enforcement, relationship + traversal). EntityService internals are tested in CodeValdSharedLib, not here. Branch: `feature/DT-006_unit-integration-tests` |
 
-> SharedLib unblock notes: ~~SHAREDLIB-010~~ ✅ and ~~SHAREDLIB-011~~ ✅ are
-> done; `entitygraph.DataManager`, `SchemaManager`, and all associated models
-> are available. **`SHAREDLIB-014`** (`EntityFilter` time-range + default
-> ordering for `dt_telemetry` / `dt_events`) is open and required before
-> FR-004 time-range telemetry queries are implementable; not a blocker for
-> MVP-DT-006.
+> All in-scope MVP rows are complete or withdrawn — see [mvp_done.md](mvp_done.md).
+> **`SHAREDLIB-014`** (`EntityFilter` time-range + default ordering for
+> `dt_telemetry` / `dt_events`) remains open and is required before FR-004
+> time-range telemetry queries can be exercised end-to-end. **FR-008** (DTDL v3
+> export) and the parked open questions in
+> [requirements.md §5](../1-SoftwareRequirements/requirements.md) (telemetry
+> retention TTL, `TraverseGraph` max-depth ceiling) are candidates for the next
+> task batch.
 
 ---
 
