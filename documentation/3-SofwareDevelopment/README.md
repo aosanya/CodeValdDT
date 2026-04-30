@@ -13,6 +13,7 @@ details for CodeValdDT.
 |---|---|
 | [mvp.md](mvp.md) | Active MVP scope, task list, and completion status |
 | [mvp_done.md](mvp_done.md) | Completed tasks with completion dates and branches |
+| [mvp-details/](mvp-details/README.md) | Per-topic task specifications grouped by domain |
 
 ---
 

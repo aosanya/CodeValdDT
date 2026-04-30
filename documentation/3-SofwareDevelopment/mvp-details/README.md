@@ -7,17 +7,35 @@ directory covers one **domain topic** (not one task ID) and contains the
 acceptance criteria, design notes, and `### Tests` matrix that the QA layer
 references.
 
-> **Refactor rule (from `research.prompt.md`)**: Files in this directory must
-> stay **≤ 500 lines**. This README must stay **≤ 300 lines**. If a topic file
-> grows past 500, split by sub-topic; never split by task ID.
+> **Refactor rule**: Files in this directory must stay **≤ 500 lines**. This
+> README must stay **≤ 300 lines**. If a topic file grows past 500, split by
+> sub-topic; never split by task ID.
 
 ---
 
 ## Topic Index
 
-| Topic File | Covers MVP Tasks | Status |
+| Topic File | Covers | Status |
 |---|---|---|
-| _(none yet)_ | — | DT MVP tasks unblocked (SHAREDLIB-010/011 done); topic files added as research closes the remaining gaps below |
+| [entity-lifecycle.md](entity-lifecycle.md) | FR-001: Entity CRUD, storage routing, immutability guard, soft delete | ✅ Done |
+| [relationships-and-graph.md](relationships-and-graph.md) | FR-002: Edge collection; FR-003: Graph traversal (`dt_graph`, AQL) | ✅ Done |
+| [telemetry-and-events.md](telemetry-and-events.md) | FR-004: Telemetry; FR-005: Events — routed `CreateEntity`, SHAREDLIB-014 dependency | ✅ Partial (time-range blocked on SHAREDLIB-014) |
+| [integration.md](integration.md) | FR-006: Pub/sub topics; FR-007: Cross registration heartbeat; SharedLib wiring | ✅ Done |
+| [dtdl-export.md](dtdl-export.md) | FR-008: DTDL v3 schema export — next candidate | 📋 Not Started |
+
+---
+
+## MVP Task → Topic File Map
+
+| MVP Task | Topic File |
+|---|---|
+| MVP-DT-001 (Module Scaffolding) | [entity-lifecycle.md](entity-lifecycle.md) |
+| MVP-DT-002 (ArangoDB Backend) | [entity-lifecycle.md](entity-lifecycle.md), [relationships-and-graph.md](relationships-and-graph.md), [telemetry-and-events.md](telemetry-and-events.md) |
+| ~~MVP-DT-003~~ (Withdrawn) | — |
+| ~~MVP-DT-004~~ (Withdrawn) | — |
+| MVP-DT-005 (Cross Registration) | [integration.md](integration.md) |
+| MVP-DT-006 (Unit & Integration Tests) | All topic files |
+| DT-007 (DTDL v3 Export — next) | [dtdl-export.md](dtdl-export.md) |
 
 ---
 
