@@ -1,4 +1,4 @@
-.PHONY: build build-server build-dev server dev dev-restart kill proto test cover test-arango test-all vet lint clean
+.PHONY: build build-server build-dev server dev dev-restart restart kill proto test cover test-arango test-all vet lint clean
 
 export PATH := /usr/local/go/bin:$(PATH)
 
@@ -29,13 +29,22 @@ dev: build-dev
 	fi; \
 	./bin/codevalddt-dev
 
+## Stop any running instance, rebuild, and run.
+restart: kill build-server
+	@echo "Running codevalddt-server..."
+	@if [ -f .env ]; then \
+		set -a && . ./.env && set +a; \
+	fi; \
+	./bin/codevalddt-server
+
 ## Stop any running dev instance, rebuild, and run.
 dev-restart: kill dev
 
 ## Stop any running instances of the codevalddt binaries.
 kill:
 	@echo "Stopping any running instances..."
-	-@pkill -9 -f "bin/codevalddt-" 2>/dev/null || true
+	-@pkill -x codevalddt-server 2>/dev/null || true
+	-@pkill -x codevalddt-dev 2>/dev/null || true
 	@sleep 1
 
 # ── Proto Codegen ─────────────────────────────────────────────────────────────
