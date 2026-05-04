@@ -9,6 +9,7 @@ package registrar
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"time"
 
@@ -97,14 +98,18 @@ func (r *Registrar) Close() {
 }
 
 // Publish implements [eventbus.Publisher].
-// Best-effort notification — currently logs the event; a future iteration
-// will call a CodeValdCross Publish RPC once CodeValdCross exposes one.
-// Errors are always nil — the DT operation has already been persisted and
-// must not be rolled back.
-func (r *Registrar) Publish(_ context.Context, e eventbus.Event) error {
-	log.Printf("registrar[codevalddt]: publish topic=%q agencyID=%q payload=%T",
-		e.Topic, e.AgencyID, e.Payload)
-	// TODO(CROSS-XXX): call OrchestratorService.Publish RPC when available.
+// Marshals the event payload to JSON and forwards it to CodeValdCross via the
+// OrchestratorService.Publish RPC, which routes it on to CodeValdPubSub.
+// Errors are logged but not returned — the operation is already persisted.
+func (r *Registrar) Publish(ctx context.Context, e eventbus.Event) error {
+	payload, err := json.Marshal(e.Payload)
+	if err != nil {
+		log.Printf("registrar[codevalddt]: marshal payload for topic=%q: %v", e.Topic, err)
+		payload = []byte("{}")
+	}
+	if err := r.heartbeat.Publish(ctx, e.AgencyID, e.Topic, "codevalddt", string(payload)); err != nil {
+		log.Printf("registrar[codevalddt]: Publish topic=%q: %v", e.Topic, err)
+	}
 	return nil
 }
 
