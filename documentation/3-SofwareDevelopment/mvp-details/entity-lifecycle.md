@@ -180,7 +180,11 @@ not duplicate it.
 
 | Test | File | Coverage |
 |---|---|---|
-| `TestDefaultDTSchema` | `schema_test.go` | Schema ID, Version, Tag, empty Types list |
+| `TestDefaultDTSchema_Metadata` | `schema_test.go` | Schema ID, Version, Tag |
+| `TestDefaultDTSchema_PlatformMetaTypes` | `schema_test.go` | TelemetryType and EventType present; no domain types |
+| `TestDefaultDTSchema_StorageCollections` | `schema_test.go` | TelemetryType→dt_telemetry_types, EventType→dt_event_types |
+| `TestDefaultDTSchema_TelemetryTypeRequiredProperties` | `schema_test.go` | TelemetryType.name is required string |
+| `TestDefaultDTSchema_EventTypeRequiredProperties` | `schema_test.go` | EventType.name is required string |
 | `TestNewBackend_*` | `storage/arangodb/storage_test.go` | Backend construction; correct collection/graph names |
 | `TestConfig_*` | `internal/config/config_test.go` | Env var loading; defaults |
 | `TestEntityServer_CreateEntity` | `internal/app/app_integration_test.go` | End-to-end via gRPC against ArangoDB |

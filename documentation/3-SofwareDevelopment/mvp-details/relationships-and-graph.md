@@ -16,6 +16,33 @@ Architecture ref: [architecture-interfaces.md §2 & §3](../../2-SoftwareDesignA
 
 ---
 
+## Design: Data-Driven Relationships
+
+Relationship types are **not hardcoded** in CodeValdDT. The agency admin declares
+them in the schema, then creates instances at runtime — two distinct phases:
+
+**Phase 1 — Schema declaration** (via `DTSchemaManager.SetSchema`):
+```
+TypeDefinition{
+    Name: "Student",
+    Relationships: []RelationshipDefinition{
+        {Name: "enrolled_in", ToType: "Course", ToMany: true},
+    },
+}
+```
+
+**Phase 2 — Instance creation** (via `CreateRelationship`):
+```
+CreateRelationshipRequest{AgencyID: "...", Name: "enrolled_in", FromID: "student-1", ToID: "course-7"}
+```
+
+The engine enforces the contract: `enrolled_in` must be declared on `Student`'s
+TypeDefinition and the target must be a `Course` entity, or `ErrInvalidRelationship`
+is returned. This applies equally to any domain — equipment, bank accounts,
+consultant rosters, or anything else the agency defines.
+
+---
+
 ## Overview
 
 Relationships between entities are stored as native ArangoDB **edge collection**

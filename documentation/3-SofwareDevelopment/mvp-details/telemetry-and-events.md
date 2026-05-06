@@ -50,62 +50,94 @@ to specialised collections by `TypeDefinition.StorageCollection`.
 
 ---
 
-## How a Telemetry Reading Is Written
+## Design: User-Defined Telemetry and Event Types (Dynamic Collections)
 
-An agency declares a telemetry type via `DTSchemaManager.SetSchema`, e.g.:
+Agencies define their own telemetry and event types **after deployment** by
+creating `TelemetryType` and `EventType` entities. Each definition gets its
+own dedicated storage collection — there is no shared `dt_telemetry` bucket.
+
+### Step 1 — Register the type (once, at schema setup time)
+
+Create a `TelemetryType` entity:
 
 ```json
 {
-  "name": "TemperatureReading",
-  "storageCollection": "dt_telemetry",
-  "immutable": true,
-  "properties": [
-    { "name": "entityID",  "type": "string" },
-    { "name": "value",     "type": "number" },
-    { "name": "timestamp", "type": "string" }
-  ]
+  "agencyID": "agency-123",
+  "typeID":   "TelemetryType",
+  "properties": {
+    "name":        "SensorReading",
+    "description": "Raw sensor measurement from any attached sensor",
+    "unit":        "varies"
+  }
 }
 ```
 
-A reading is then written via the standard `CreateEntity` RPC:
+The DT service derives the collection name from `name`:
+- `SensorReading` → `dt_telemetry_sensor_readings`
+- `AccountBalance` → `dt_telemetry_account_balances`
+- `GradePoint`     → `dt_telemetry_grade_points`
+
+It then provisions that collection (if absent) and adds a corresponding
+`TypeDefinition` to the agency's active schema with
+`StorageCollection: "dt_telemetry_sensor_readings"` and `Immutable: true`.
+
+### Step 2 — Write readings (at runtime)
+
+Once registered, readings are written via the standard `CreateEntity` RPC:
 
 ```json
 {
   "agencyID":   "agency-123",
-  "typeID":     "TemperatureReading",
+  "typeID":     "SensorReading",
   "properties": {
-    "entityID":  "pump-entity-uuid",
+    "entityID":  "sensor-entity-uuid",
     "value":     42.5,
+    "unit":      "°C",
     "timestamp": "2026-01-01T12:00:00Z"
   }
 }
 ```
 
 The storage routing chain:
-1. `DTSchemaManager.GetSchema` resolves `TypeDefinition` for `"TemperatureReading"`
-2. `StorageCollection == "dt_telemetry"` → write to `dt_telemetry` collection
-3. `Immutable == true` → any subsequent `UpdateEntity` returns `ErrImmutableType`
+1. `DTSchemaManager.GetSchema` resolves `TypeDefinition` for `"SensorReading"`
+2. `StorageCollection == "dt_telemetry_sensor_readings"` → write to that collection
+3. `Immutable == true` → `UpdateEntity` returns `ErrImmutableType`
 4. Cross topic `cross.dt.{agencyID}.telemetry.recorded` published
 
 ---
 
-## How an Event Is Written
+## How an Event Type Is Registered and Written
 
-Events follow the identical pattern with `StorageCollection: "dt_events"`.
-Payload, source `entityID`, and event `timestamp` live inside `properties`:
+`EventType` follows the identical pattern:
 
 ```json
 {
-  "_key":       "evt-uuid",
-  "agencyID":   "agency-123",
-  "typeID":     "ValveOpened",
+  "agencyID": "agency-123",
+  "typeID":   "EventType",
   "properties": {
-    "entityID":  "pump-entity-uuid",
-    "payload":   { "operator": "agent-7" },
-    "timestamp": "2026-01-01T12:00:01Z"
+    "name":        "ValveEvent",
+    "description": "Lifecycle events emitted by valve equipment"
   }
 }
 ```
+
+Derived collection: `ValveEvent` → `dt_events_valve_events`
+
+Subsequent event writes use `typeID: "ValveEvent"` in `CreateEntity`.
+
+---
+
+## Collection Naming Convention
+
+| TypeID registered | Derived collection |
+|---|---|
+| `SensorReading` | `dt_telemetry_sensor_readings` |
+| `AccountBalance` | `dt_telemetry_account_balances` |
+| `ValveEvent` | `dt_events_valve_events` |
+| `StatusChange` | `dt_events_status_changes` |
+
+Rule: `dt_telemetry_` + `snake_case(plural(name))` for TelemetryTypes;
+`dt_events_` + `snake_case(plural(name))` for EventTypes.
 
 ---
 

@@ -86,8 +86,10 @@ Cross-service events (v1):
 
 DTDL compatibility:
   - Schema standard: DTDL v3 (Azure Digital Twins migration path)
-  - EntityTypeDefinition (DTDL Interface) stored in CodeValdAgency
-  - No schema enforcement in v1 — trust the caller
+  - TypeDefinition (DTDL Interface) declared at runtime via DTSchemaManager.SetSchema
+  - DefaultDTSchema() is an empty scaffold — no domain types are pre-wired
+  - Property value enforcement deferred (v1 trusts the caller)
+  - Relationship name + ToType enforcement: active — validated against declared RelationshipDefinitions
 
 Documentation structure:
   1-SoftwareRequirements:  requirements.md

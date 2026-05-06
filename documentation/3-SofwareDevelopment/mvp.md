@@ -63,6 +63,23 @@ See: [mvp-details/telemetry-and-events.md](mvp-details/telemetry-and-events.md)
 
 ---
 
+## P2.5: Dynamic Collection Provisioning
+
+### DT-010 — TelemetryType / EventType → Dynamic Collection Bootstrap
+
+| Task | Status | Depends On |
+|------|--------|------------|
+| DT-010: When a `TelemetryType` or `EventType` entity is created, derive the collection name (`dt_telemetry_{snake_plural(name)}` / `dt_events_{snake_plural(name)}`), create that ArangoDB document collection if absent (with the standard indexes), and add the corresponding `TypeDefinition` (Immutable: true) to the agency's active schema via `DTSchemaManager.SetSchema` | 📋 Not Started | MVP-DT-002 |
+
+**Scope**: Requires a post-`CreateEntity` hook inside `DTDataManager` that checks
+`TypeID ∈ {"TelemetryType", "EventType"}` and triggers collection + schema provisioning.
+SharedLib `entitygraph/arangodb` must support `EnsureCollection(ctx, name, indexes)` or
+equivalent to allow the DT service to create collections at runtime.
+
+See: [mvp-details/telemetry-and-events.md](mvp-details/telemetry-and-events.md)
+
+---
+
 ## P3: Next Feature Batch (Post-MVP)
 
 ~~### DT-007 — DTDL v3 Export Endpoint (FR-008)~~ ✅

@@ -39,15 +39,23 @@ and events.
 ### FR-001: Entity Management
 - CodeValdDT must support creating, reading, updating, deleting, and listing
   entity instances scoped by `agencyID`
-- Each entity has a `typeID` (name of an `EntityTypeDefinition` on the Agency),
-  a free-form `properties` map, and timestamps
+- Each entity has a `typeID` (matching a `TypeDefinition.Name` in the agency's
+  active DT schema), a `properties` map, and timestamps
+- The agency declares its own `TypeDefinition`s at runtime via
+  `DTSchemaManager.SetSchema` — no domain types are pre-wired in the service
 - Entity creation is allowed regardless of Agency publication status in v1
 
 ### FR-002: Graph Relationships
 - Relationships between entities must be stored as **ArangoDB edge collection**
   documents with `_from` and `_to` pointing to entity document handles
 - The `relationships` collection must be created as `CollectionTypeEdge`
-- Relationships have a `name` (e.g. `connects_to`) and optional properties
+- Relationship names are **data-driven**: the agency declares
+  `RelationshipDefinition`s on each `TypeDefinition` in the schema, then
+  creates relationship instances at runtime via `CreateRelationship`
+- The engine validates that the relationship `name` matches a declared
+  `RelationshipDefinition.Name` on the source entity's `TypeDefinition`, and
+  that the target entity's `TypeID` matches `RelationshipDefinition.ToType`
+- Relationships have a `name` and optional `properties`
 
 ### FR-003: Graph Traversal
 - The service must support traversing the graph from a starting entity with
@@ -123,7 +131,8 @@ and events.
 
 | Question | Decision |
 |---|---|
-| Schema enforcement at entity creation | Deferred — v1 trusts the caller |
+| Property value enforcement at entity creation | Deferred — v1 trusts the caller on property values |
+| Relationship name + ToType enforcement | **Resolved** — enforced by `entitygraph.ValidateCreateRelationship`; unknown name or mismatched ToType returns `ErrInvalidRelationship` |
 | Live telemetry streaming (gRPC server-stream) | Deferred |
 | Entity deletion cascade to relationships/telemetry/events | **Resolved — no cascade in v1.** `DeleteEntity` soft-deletes only the entity; its relationships, telemetry, and events are retained as-is. Orphan cleanup deferred to v2. |
 | Soft delete vs. hard delete for entities | **Resolved — soft delete.** `DeleteEntity` sets `deleted: true` and `deletedAt` on the document. Hard delete is not exposed in v1. |
