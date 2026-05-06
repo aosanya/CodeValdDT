@@ -49,9 +49,9 @@ func TestDefaultDTSchema_StorageCollections(t *testing.T) {
 		wantColl string
 		wantImm  bool
 	}{
-		{"AssetLocation", "", false},
-		{"Equipment", "", false},
-		{"Sensor", "", false},
+		{"AssetLocation", "dt_entities", false},
+		{"Equipment", "dt_entities", false},
+		{"Sensor", "dt_entities", false},
 		{"TelemetryReading", "dt_telemetry", true},
 		{"EquipmentEvent", "dt_events", true},
 	}
@@ -154,10 +154,13 @@ func TestDefaultDTSchema_Relationships(t *testing.T) {
 		relName  string
 		toType   string
 		toMany   bool
+		inverse  string
 	}{
-		{"AssetLocation", "contains", "Equipment", true},
-		{"Equipment", "connects_to", "Equipment", true},
-		{"Sensor", "attached_to", "Equipment", false},
+		{"AssetLocation", "contains", "Equipment", true, "located_in"},
+		{"Equipment", "located_in", "AssetLocation", false, "contains"},
+		{"Equipment", "connects_to", "Equipment", true, ""},
+		{"Equipment", "has_sensor", "Sensor", true, "attached_to"},
+		{"Sensor", "attached_to", "Equipment", false, "has_sensor"},
 	}
 	for _, tc := range cases {
 		td, ok := byName[tc.typeName]
@@ -175,8 +178,8 @@ func TestDefaultDTSchema_Relationships(t *testing.T) {
 				if rel.ToMany != tc.toMany {
 					t.Errorf("%s.%s.ToMany: got %v, want %v", tc.typeName, tc.relName, rel.ToMany, tc.toMany)
 				}
-				if rel.Inverse != "" {
-					t.Errorf("%s.%s.Inverse: must be empty (no bidirectional declaration)", tc.typeName, tc.relName)
+				if rel.Inverse != tc.inverse {
+					t.Errorf("%s.%s.Inverse: got %q, want %q", tc.typeName, tc.relName, rel.Inverse, tc.inverse)
 				}
 			}
 		}
