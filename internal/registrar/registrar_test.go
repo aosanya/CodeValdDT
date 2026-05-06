@@ -89,13 +89,21 @@ func TestRegistrar_RunExitsOnContextCancel(t *testing.T) {
 	}
 }
 
-// TestDTRoutes_DefaultSchemaIsEmpty pins the FR-007 invariant that the default
-// DT schema produces no routes — agencies declare their own TypeDefinitions at
-// runtime and routes are derived from those. If a future DefaultDTSchema starts
-// pre-baking types, this test will fail and force a deliberate update.
-func TestDTRoutes_DefaultSchemaIsEmpty(t *testing.T) {
-	got := dtRoutes()
-	if len(got) != 0 {
-		t.Errorf("dtRoutes(): want 0 routes from empty DefaultDTSchema, got %d: %+v", len(got), got)
+// TestDTRoutes_ContainsDTDLExport pins that dtRoutes always includes the
+// service-level DTDL export route regardless of the schema content. Schema-
+// derived routes start empty (DefaultDTSchema has no TypeDefinitions) and grow
+// as the agency declares types at runtime; the DTDL route is unconditional.
+func TestDTRoutes_ContainsDTDLExport(t *testing.T) {
+	routes := dtRoutes()
+
+	var found bool
+	for _, r := range routes {
+		if r.Method == "GET" && r.Pattern == "/{agencyId}/dt/schema/dtdl" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("dtRoutes(): DTDL export route not found in %+v", routes)
 	}
 }

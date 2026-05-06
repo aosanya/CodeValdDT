@@ -115,16 +115,23 @@ func (r *Registrar) Publish(ctx context.Context, e eventbus.Event) error {
 
 // dtRoutes returns the HTTP routes that CodeValdDT exposes via Cross.
 //
-// All routes are derived dynamically from [codevalddt.DefaultDTSchema] using
-// [schemaroutes.RoutesFromSchema]. DT has no service-specific gRPC service —
-// every route maps to the shared EntityService at
-// [egserver.GRPCServicePath]. The default schema is empty, so the initial
-// route set is empty; types are added by the agency at runtime.
+// Schema-driven routes come from [schemaroutes.RoutesFromSchema]; because the
+// default DT schema is empty, the initial set is empty and grows as the agency
+// declares types at runtime.
+//
+// The DTDL export route is manually declared here because it is a
+// service-level route, not tied to any TypeDefinition.
 func dtRoutes() []types.RouteInfo {
-	return schemaroutes.RoutesFromSchema(
+	routes := schemaroutes.RoutesFromSchema(
 		codevalddt.DefaultDTSchema(),
 		"/dt/{agencyId}",
 		"agencyId",
 		egserver.GRPCServicePath,
 	)
+	routes = append(routes, types.RouteInfo{
+		Method:     "GET",
+		Pattern:    "/{agencyId}/dt/schema/dtdl",
+		Capability: "export_dtdl",
+	})
+	return routes
 }
