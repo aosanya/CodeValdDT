@@ -87,9 +87,9 @@ and events.
 ### FR-006: Pub/Sub (v1)
 - After every successful `CreateEntity`, publish a Cross topic chosen by the
   resolved `TypeDefinition.StorageCollection`:
-  - `dt_entities`  → `cross.dt.{agencyID}.entity.created`
-  - `dt_telemetry` → `cross.dt.{agencyID}.telemetry.recorded`
-  - `dt_events`    → `cross.dt.{agencyID}.event.recorded`
+  - `dt_entities`  → `dt.entity.created`
+  - `dt_telemetry` → `dt.telemetry.recorded`
+  - `dt_events`    → `dt.event.recorded`
 - Publish failures must be logged but not surfaced to the caller — the entity
   is already persisted
 

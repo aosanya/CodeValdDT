@@ -55,9 +55,9 @@ DTDataManager.CreateEntity(ctx, req)
     │
     └── crossPublisher.Publish(ctx, topic, entity.ID)
             │   topic is selected from the resolved StorageCollection:
-            │     "dt_entities"  → cross.dt.{agencyID}.entity.created
-            │     "dt_telemetry" → cross.dt.{agencyID}.telemetry.recorded
-            │     "dt_events"    → cross.dt.{agencyID}.event.recorded
+            │     "dt_entities"  → dt.entity.created
+            │     "dt_telemetry" → dt.telemetry.recorded
+            │     "dt_events"    → dt.event.recorded
             ▼
         Cross routes the event to subscribers
 ```

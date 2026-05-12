@@ -49,9 +49,9 @@ RegisterRequest{
     ServiceName: "codevalddt",
     Addr:        ":50055",
     Produces: []string{
-        "cross.dt.{agencyID}.entity.created",
-        "cross.dt.{agencyID}.telemetry.recorded",
-        "cross.dt.{agencyID}.event.recorded",
+        "dt.entity.created",
+        "dt.telemetry.recorded",
+        "dt.event.recorded",
     },
     Consumes: []string{},
     Routes: []Route{
@@ -79,9 +79,9 @@ after every successful `CreateEntity`. The topic is chosen from the resolved
 
 | `StorageCollection` | Published topic |
 |---|---|
-| `"dt_entities"` (or empty) | `cross.dt.{agencyID}.entity.created` |
-| `"dt_telemetry"` | `cross.dt.{agencyID}.telemetry.recorded` |
-| `"dt_events"` | `cross.dt.{agencyID}.event.recorded` |
+| `"dt_entities"` (or empty) | `dt.entity.created` |
+| `"dt_telemetry"` | `dt.telemetry.recorded` |
+| `"dt_events"` | `dt.event.recorded` |
 
 **No consumers are declared for telemetry or event topics in v1.** The topics
 exist on the Cross bus; subscriber registration is deferred until a consuming

@@ -25,7 +25,7 @@ CodeValdDT is a **Go gRPC microservice** that owns the Digital Twin layer:
 - **Telemetry** — time-series readings, queryable by entity and time range
 - **Events** — append-only per-entity event log
 - **Schema** — DTDL v3 compatible (Azure Digital Twins migration path) — schema documents live in `dt_schemas` and are managed by `DTSchemaManager`
-- **Pub/sub** — emits `cross.dt.{agencyID}.entity.created` and `cross.dt.{agencyID}.telemetry.recorded` via CodeValdCross
+- **Pub/sub** — emits `dt.entity.created` and `dt.telemetry.recorded` via CodeValdCross
 - **Cross registration** — registers as service `codevalddt` on `:50055` with a 20-second liveness heartbeat
 
 ---

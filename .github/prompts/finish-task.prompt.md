@@ -24,8 +24,8 @@ agent: agent
    - [ ] All new exported symbols have godoc comments
    - [ ] All new exported methods accept `context.Context` as first argument
    - [ ] `Backend` is injected — no hardcoded ArangoDB in manager
-   - [ ] `cross.dt.{agencyID}.entity.created` published on every `CreateEntity`
-   - [ ] `cross.dt.{agencyID}.telemetry.recorded` published on every
+   - [ ] `dt.entity.created` published on every `CreateEntity`
+   - [ ] `dt.telemetry.recorded` published on every
          `RecordTelemetry`
    - [ ] `relationships` uses edge collection — not a document collection
    - [ ] No AI/LLM logic, no frontend serving added

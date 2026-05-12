@@ -4,7 +4,7 @@
 
 | Stakeholder | Role | How They Use CodeValdDT |
 |---|---|---|
-| **CodeValdCross** | Service registry + pub/sub bus | Receives `Register` heartbeat every 20 s; routes `cross.dt.{agencyID}.entity.created` and `cross.dt.{agencyID}.telemetry.recorded` events to subscribers |
+| **CodeValdCross** | Service registry + pub/sub bus | Receives `Register` heartbeat every 20 s; routes `dt.entity.created` and `dt.telemetry.recorded` events to subscribers |
 | **CodeValdCortex** (and any service that proxies through Cross) | Calls `DTService` over gRPC for entity / relationship / telemetry / event operations |
 | **CodeValdAgency** | Owner of the entity-type schema (DTDL v3 `Interface` definitions). CodeValdDT reads the schema via `DTSchemaManager.GetSchema` to resolve `TypeDefinition.StorageCollection` and `TypeDefinition.Immutable` |
 

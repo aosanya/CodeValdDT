@@ -21,12 +21,12 @@ CodeValdDT provides the following top-level capabilities to the rest of the Code
 - Telemetry readings are **`Entity` instances** — never a separate Go type — created via `CreateEntity` with a `typeID` whose `TypeDefinition` has `StorageCollection: "dt_telemetry"` and `Immutable: true`
 - The reading's source `entityID`, `value`, and `timestamp` are carried inside `properties`; the document is stored in the `dt_telemetry` collection
 - Query historical telemetry per source entity (and optionally by time range) via `ListEntities` against `dt_telemetry`
-- Every successful record fires `cross.dt.{agencyID}.telemetry.recorded` on CodeValdCross
+- Every successful record fires `dt.telemetry.recorded` on CodeValdCross
 
 ### 4. Events
 - Events are **`Entity` instances** routed identically — `StorageCollection: "dt_events"`, `Immutable: true` — with source `entityID`, `payload`, and `timestamp` in `properties`
 - List events per source entity in chronological order via `ListEntities` against `dt_events`
-- Every successful record fires `cross.dt.{agencyID}.event.recorded`
+- Every successful record fires `dt.event.recorded`
 
 ### 5. Schema Management (DTDL v3 Compatible)
 - `DTSchemaManager` owns `SetSchema`, `GetSchema`, `ListSchemaVersions` against the `dt_schemas` collection
@@ -36,8 +36,8 @@ CodeValdDT provides the following top-level capabilities to the rest of the Code
 
 ### 6. Cross Integration
 - Registers as service `codevalddt` on `:50055` with CodeValdCross every 20 seconds (liveness signal)
-- Publishes `cross.dt.{agencyID}.entity.created` after every successful entity create
-- Publishes `cross.dt.{agencyID}.telemetry.recorded` after every successful telemetry write
+- Publishes `dt.entity.created` after every successful entity create
+- Publishes `dt.telemetry.recorded` after every successful telemetry write
 
 ---
 

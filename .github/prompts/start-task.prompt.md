@@ -59,9 +59,9 @@ agent: agent
 
 - **No AI/LLM logic, no frontend serving** — this service manages twin data only
 - **`DTManager` is the only entry point** — gRPC handlers delegate to it
-- **`cross.dt.{agencyID}.entity.created` is mandatory** — publish on every
+- **`dt.entity.created` is mandatory** — publish on every
   successful `CreateEntity`
-- **`cross.dt.{agencyID}.telemetry.recorded` is mandatory** — publish on every
+- **`dt.telemetry.recorded` is mandatory** — publish on every
   successful `RecordTelemetry`
 - **`relationships` is an edge collection** — never use a document collection
 - **Backend is injected** — never hardcode ArangoDB connection in manager

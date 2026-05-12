@@ -17,9 +17,9 @@ they are not separate Go types and have no separate gRPC service.
 - `internal/app`, `internal/config` — bootstrap wiring; configuration loaded
   from env vars (see `internal/config/config.go`).
 - `internal/registrar` — Cross heartbeat + `CrossPublisher` for
-  `cross.dt.{agencyID}.entity.created`,
-  `cross.dt.{agencyID}.telemetry.recorded`,
-  `cross.dt.{agencyID}.event.recorded`.
+  `dt.entity.created`,
+  `dt.telemetry.recorded`,
+  `dt.event.recorded`.
 - `internal/server` — re-export of the shared `EntityServer` (DT has no
   service-specific gRPC service).
 - `storage/arangodb` — thin shim over

@@ -35,8 +35,8 @@ ArangoDB collections (per agency DB):
 
 Cross-service events (v1):
   Produces:
-    - cross.dt.{agencyID}.entity.created
-    - cross.dt.{agencyID}.telemetry.recorded
+    - dt.entity.created
+    - dt.telemetry.recorded
   Consumes: (none)
 
 Documentation structure:

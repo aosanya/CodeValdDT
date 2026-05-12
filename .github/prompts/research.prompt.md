@@ -80,8 +80,8 @@ ArangoDB collections (per agency DB):
 
 Cross-service events (v1):
   Produces:
-    - cross.dt.{agencyID}.entity.created
-    - cross.dt.{agencyID}.telemetry.recorded
+    - dt.entity.created
+    - dt.telemetry.recorded
   Consumes: (none in v1)
 
 DTDL compatibility:
@@ -122,5 +122,5 @@ Documentation structure:
 - Is event ordering guaranteed (within entity)?
 
 ### Area 5 — Integration
-- Which other services consume `cross.dt.{agencyID}.telemetry.recorded`?
+- Which other services consume `dt.telemetry.recorded`?
 - Does any service need `TraverseGraph` results?

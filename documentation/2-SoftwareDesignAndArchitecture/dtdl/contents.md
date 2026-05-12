@@ -17,7 +17,7 @@ realised as its own `TypeDefinition` whose `StorageCollection` is
 `CreateEntity` with that `typeID`; the source entity's `entityID`, the
 reading `value`, and the `timestamp` are carried inside `properties`. The
 record lands as an `Entity` document in `dt_telemetry`, and
-`cross.dt.{agencyID}.telemetry.recorded` is published. There is no separate
+`dt.telemetry.recorded` is published. There is no separate
 `RecordTelemetry` RPC.
 
 ### Required fields

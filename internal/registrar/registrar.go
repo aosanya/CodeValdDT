@@ -43,11 +43,11 @@ var _ codevalddt.CrossPublisher = (*Registrar)(nil)
 //   - pingInterval  — heartbeat cadence; ≤ 0 means only the initial ping
 //   - pingTimeout   — per-RPC timeout for each Register call
 //
-// CodeValdDT produces three topic families, all scoped by agency:
+// CodeValdDT produces three topics:
 //
-//	cross.dt.{agencyID}.entity.created
-//	cross.dt.{agencyID}.telemetry.recorded
-//	cross.dt.{agencyID}.event.recorded
+//	dt.entity.created
+//	dt.telemetry.recorded
+//	dt.event.recorded
 //
 // It currently consumes no topics.
 //
@@ -62,9 +62,9 @@ func New(
 	pingInterval, pingTimeout time.Duration,
 ) (*Registrar, error) {
 	produces := []string{
-		"cross.dt." + agencyID + ".entity.created",
-		"cross.dt." + agencyID + ".telemetry.recorded",
-		"cross.dt." + agencyID + ".event.recorded",
+		"dt.entity.created",
+		"dt.telemetry.recorded",
+		"dt.event.recorded",
 	}
 
 	hb, err := sharedregistrar.New(
@@ -108,7 +108,7 @@ func (r *Registrar) Publish(ctx context.Context, e eventbus.Event) error {
 		payload = []byte("{}")
 	}
 	if err := r.heartbeat.Publish(ctx, e.AgencyID, e.Topic, "codevalddt", string(payload)); err != nil {
-		log.Printf("registrar[codevalddt]: Publish topic=%q: %v", e.Topic, err)
+		log.Printf("registrar[codevalddt]: Publish topic=%q agencyID=%q: %v", e.Topic, e.AgencyID, err)
 	}
 	return nil
 }

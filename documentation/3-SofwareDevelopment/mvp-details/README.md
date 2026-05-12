@@ -65,5 +65,5 @@ references.
 - ✅ Per-source-entity chronological ordering — guaranteed by the default `properties.timestamp ASC` ordering rule (above).
 
 ### Area 5 — Integration
-- [ ] No declared consumer of `cross.dt.{agencyID}.telemetry.recorded` or `cross.dt.{agencyID}.event.recorded`. The topics exist on the Cross bus; subscriber list is unknown.
+- [ ] No declared consumer of `dt.telemetry.recorded` or `dt.event.recorded`. The topics exist on the Cross bus; subscriber list is unknown.
 - [ ] No declared consumer of `TraverseGraph` results — UI? CodeValdComm? — needed to size the response payload and decide whether pagination is required.

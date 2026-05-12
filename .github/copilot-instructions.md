@@ -41,9 +41,9 @@ events.
   handlers delegate to it
 - `relationships` is an **ArangoDB edge collection** — use ArangoDB graph
   traversal for `TraverseGraph`
-- `cross.dt.{agencyID}.entity.created` **must** be published after every
+- `dt.entity.created` **must** be published after every
   successful `CreateEntity`
-- `cross.dt.{agencyID}.telemetry.recorded` **must** be published after every
+- `dt.telemetry.recorded` **must** be published after every
   successful `RecordTelemetry`
 - Storage backends are injected — the core library is backend-agnostic
 - EntityType schema (DTDL Interface) lives in CodeValdAgency — CodeValdDT
@@ -132,9 +132,9 @@ git branch -d feature/DT-XXX_description
 - **All public functions must have godoc comments**
 - **Context propagation** — every public method takes `context.Context` as
   first argument
-- **`cross.dt.{agencyID}.entity.created` must be published** on every
+- **`dt.entity.created` must be published** on every
   successful `CreateEntity`
-- **`cross.dt.{agencyID}.telemetry.recorded` must be published** on every
+- **`dt.telemetry.recorded` must be published** on every
   successful `RecordTelemetry`
 - **`relationships` is an edge collection** — never store relationships in a
   regular document collection
@@ -182,8 +182,8 @@ req := &pb.RegisterRequest{
     ServiceName: "codevalddt",
     Addr:        ":50055",
     Produces: []string{
-        "cross.dt.{agencyID}.entity.created",
-        "cross.dt.{agencyID}.telemetry.recorded",
+        "dt.entity.created",
+        "dt.telemetry.recorded",
     },
     Consumes: []string{},
     Routes:   dtRoutes(),

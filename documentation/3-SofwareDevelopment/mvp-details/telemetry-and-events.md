@@ -44,8 +44,8 @@ to specialised collections by `TypeDefinition.StorageCollection`.
 - [x] `CreateEntity` with a `TypeDefinition` whose `StorageCollection == "dt_events"` writes to `dt_events`
 - [x] `UpdateEntity` returns `codes.FailedPrecondition` (`ErrImmutableType`) for any type with `Immutable: true`
 - [x] `(properties.entityID, properties.timestamp)` persistent index exists on both `dt_telemetry` and `dt_events`
-- [x] Cross topic `cross.dt.{agencyID}.telemetry.recorded` published after successful telemetry `CreateEntity`
-- [x] Cross topic `cross.dt.{agencyID}.event.recorded` published after successful event `CreateEntity`
+- [x] Cross topic `dt.telemetry.recorded` published after successful telemetry `CreateEntity`
+- [x] Cross topic `dt.event.recorded` published after successful event `CreateEntity`
 - [ ] `ListEntities` with time-range filter on `properties.timestamp` returns readings in `ASC` order — **blocked on SHAREDLIB-014**
 
 ---
@@ -102,7 +102,7 @@ The storage routing chain:
 1. `DTSchemaManager.GetSchema` resolves `TypeDefinition` for `"SensorReading"`
 2. `StorageCollection == "dt_telemetry_sensor_readings"` → write to that collection
 3. `Immutable == true` → `UpdateEntity` returns `ErrImmutableType`
-4. Cross topic `cross.dt.{agencyID}.telemetry.recorded` published
+4. Cross topic `dt.telemetry.recorded` published
 
 ---
 

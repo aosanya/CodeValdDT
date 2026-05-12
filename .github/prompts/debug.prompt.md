@@ -8,7 +8,7 @@ agent: agent
 
 ### Scenario 1: `CreateEntity` Succeeds but `entity.created` Never Published
 **Symptom**: Entity appears in ArangoDB but no downstream reaction via Cross  
-**Cause**: `cross.dt.{agencyID}.entity.created` publish is missing or Cross client is nil  
+**Cause**: `dt.entity.created` publish is missing or Cross client is nil  
 **Check**: Confirm `m.crossClient.Publish(...)` is called after `backend.InsertEntity`
 
 ### Scenario 2: `TraverseGraph` Returns Empty or Wrong Results

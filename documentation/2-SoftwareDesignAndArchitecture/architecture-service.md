@@ -74,9 +74,9 @@ RegisterRequest{
     ServiceName: "codevalddt",
     Addr:        ":50055",
     Produces: []string{
-        "cross.dt.{agencyID}.entity.created",
-        "cross.dt.{agencyID}.telemetry.recorded",
-        "cross.dt.{agencyID}.event.recorded",
+        "dt.entity.created",
+        "dt.telemetry.recorded",
+        "dt.event.recorded",
     },
     Consumes: []string{},
     Routes: []Route{

@@ -24,7 +24,7 @@ relationship, telemetry reading, and event is scoped by `agencyID`.
 
 | Service | Method | Description |
 |---|---|---|
-| `DTService` | `CreateEntity` | Create an entity instance; publishes `cross.dt.{agencyID}.entity.created` |
+| `DTService` | `CreateEntity` | Create an entity instance; publishes `dt.entity.created` |
 | `DTService` | `GetEntity` | Get an entity by ID |
 | `DTService` | `UpdateEntity` | Update entity property values |
 | `DTService` | `DeleteEntity` | Delete an entity |
@@ -32,7 +32,7 @@ relationship, telemetry reading, and event is scoped by `agencyID`.
 | `DTService` | `CreateRelationship` | Create a graph edge between two entities |
 | `DTService` | `DeleteRelationship` | Remove a graph edge |
 | `DTService` | `TraverseGraph` | Walk the graph from a starting entity |
-| `DTService` | `RecordTelemetry` | Record a telemetry reading; publishes `cross.dt.{agencyID}.telemetry.recorded` |
+| `DTService` | `RecordTelemetry` | Record a telemetry reading; publishes `dt.telemetry.recorded` |
 | `DTService` | `QueryTelemetry` | Query historical telemetry for an entity |
 | `DTService` | `RecordEvent` | Append an event to an entity's log |
 | `DTService` | `ListEvents` | Read an entity's event history |
@@ -41,8 +41,8 @@ relationship, telemetry reading, and event is scoped by `agencyID`.
 
 | Topic | Direction | Description |
 |---|---|---|
-| `cross.dt.{agencyID}.entity.created` | **produces** | After every successful `CreateEntity` |
-| `cross.dt.{agencyID}.telemetry.recorded` | **produces** | After every successful `RecordTelemetry` |
+| `dt.entity.created` | **produces** | After every successful `CreateEntity` |
+| `dt.telemetry.recorded` | **produces** | After every successful `RecordTelemetry` |
 
 ### Key Design Properties
 - **One ArangoDB database per agency** — consistent with platform convention

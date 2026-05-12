@@ -107,7 +107,7 @@ func (m *manager) CreateEntity(ctx context.Context, req CreateEntityRequest) (En
     if err != nil {
         return Entity{}, err
     }
-    topic := fmt.Sprintf("cross.dt.%s.entity.created", req.AgencyID)
+    topic := "dt.entity.created"
     m.crossClient.Publish(ctx, topic, entity.ID)
     return entity, nil
 }
@@ -118,7 +118,7 @@ func (m *manager) RecordTelemetry(ctx context.Context, req RecordTelemetryReques
     if err != nil {
         return TelemetryReading{}, err
     }
-    topic := fmt.Sprintf("cross.dt.%s.telemetry.recorded", req.AgencyID)
+    topic := "dt.telemetry.recorded"
     m.crossClient.Publish(ctx, topic, reading.ID)
     return reading, nil
 }
@@ -184,8 +184,8 @@ func register(ctx context.Context, crossAddr string) {
         ServiceName: "codevalddt",
         Addr:        ":50055",
         Produces: []string{
-            "cross.dt.{agencyID}.entity.created",
-            "cross.dt.{agencyID}.telemetry.recorded",
+            "dt.entity.created",
+            "dt.telemetry.recorded",
         },
         Consumes: []string{},
         Routes:   dtRoutes(),
@@ -250,7 +250,7 @@ func toGRPCError(err error) error {
 | Interfaces | noun-only | `DTManager`, `Backend` |
 | Exported types | PascalCase | `Entity`, `Relationship`, `TelemetryReading` |
 | gRPC service | `DTService` | in `proto/codevalddt/dt.proto` |
-| Topic constants | package-level const | `TopicEntityCreated = "cross.dt.%s.entity.created"` |
+| Topic constants | package-level const | `TopicEntityCreated = "dt.entity.created"` |
 
 ---
 

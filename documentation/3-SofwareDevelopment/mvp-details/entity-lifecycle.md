@@ -72,9 +72,9 @@ DTDataManager.CreateEntity(ctx, req)
     │
     └── crossPublisher.Publish(ctx, topic, entity.ID)
             topic selected by resolved StorageCollection:
-              "dt_entities"  → cross.dt.{agencyID}.entity.created
-              "dt_telemetry" → cross.dt.{agencyID}.telemetry.recorded
-              "dt_events"    → cross.dt.{agencyID}.event.recorded
+              "dt_entities"  → dt.entity.created
+              "dt_telemetry" → dt.telemetry.recorded
+              "dt_events"    → dt.event.recorded
             Publish failures logged, never returned to caller.
 ```
 
@@ -123,9 +123,9 @@ type checks exist in the manager or handlers.
 
 | `StorageCollection` | Backing collection | Immutable? | Cross topic |
 |---|---|---|---|
-| `""` (empty) | `dt_entities` | No | `cross.dt.{agencyID}.entity.created` |
-| `"dt_telemetry"` | `dt_telemetry` | Yes | `cross.dt.{agencyID}.telemetry.recorded` |
-| `"dt_events"` | `dt_events` | Yes | `cross.dt.{agencyID}.event.recorded` |
+| `""` (empty) | `dt_entities` | No | `dt.entity.created` |
+| `"dt_telemetry"` | `dt_telemetry` | Yes | `dt.telemetry.recorded` |
+| `"dt_events"` | `dt_events` | Yes | `dt.event.recorded` |
 
 `DefaultDTSchema()` ships **no** built-in TypeDefinitions — every agency populates
 its own `TypeDefinition` list at runtime via `DTSchemaManager.SetSchema`.

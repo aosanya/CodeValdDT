@@ -49,7 +49,7 @@ func TestRegistrar_PublishLogsTopic(t *testing.T) {
 		log.SetFlags(originalFlags)
 	})
 
-	topic := "cross.dt.agency-7.entity.created"
+	topic := "dt.entity.created"
 	if err := r.Publish(context.Background(), eventbus.Event{Topic: topic, AgencyID: "agency-7"}); err != nil {
 		t.Fatalf("Publish: unexpected error: %v", err)
 	}
